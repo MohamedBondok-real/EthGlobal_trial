@@ -2,8 +2,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'PrivyShield AI | Autonomous Agent Wallet with Policy Guardrails',
-  description: 'ETHGlobal submission: Autonomous AI Agent Wallet powered by Privy Server Wallets and Policy Engine.',
+  title: 'PrivyShield AI | Autonomous DeFi Agent Wallet with Policy Guardrails',
+  description: 'ETHGlobal 2026 Submission: Autonomous AI Agent Wallet powered by Privy Server Wallets and Policy Engine.',
 };
 
 export default function RootLayout({
@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl" className="dark">
+    <html lang="en" dir="ltr" className="dark">
       <body className="min-h-screen bg-[#070B14] text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
         <div className="relative min-h-screen flex flex-col justify-between">
           {/* Ambient Background Gradient Orbs */}
@@ -25,7 +25,7 @@ export default function RootLayout({
           </main>
 
           <footer className="w-full border-t border-slate-800/60 bg-slate-950/40 py-4 text-center text-xs text-slate-500">
-            Built for ETHGlobal 2026 • Powered by <span className="text-indigo-400 font-semibold">Privy Server Wallets & Policy Engine</span> • TEE Enclave Security
+            Built for ETHGlobal 2026 • Powered by <span className="text-indigo-400 font-semibold">Privy Server Wallets & Policy Engine</span> • Hardware-Isolated TEE Security
           </footer>
         </div>
       </body>

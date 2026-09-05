@@ -80,19 +80,19 @@ export default function PrivyAuthButton({ onLoginSuccess }: PrivyAuthButtonProps
               </button>
             </div>
 
-            <p className="text-xs text-slate-400 my-4">
-              تسجيل دخول فوري للمستخدمين عبر البريد أو المحفظة لربط الصلاحيات مع محفظة الـ AI Agent.
+            <p className="text-xs text-slate-400 my-4 leading-relaxed">
+              Authenticate via Email, Google, or Passkeys to delegate policy-scoped execution permissions to the autonomous AI Agent.
             </p>
 
             <form onSubmit={handleSimulatedLogin} className="space-y-3">
               <div>
                 <label className="block text-[11px] font-medium text-slate-300 mb-1">
-                  البريد الإلكتروني (Email / Social)
+                  Email Address / Web3 ID
                 </label>
                 <input
                   type="email"
                   required
-                  placeholder="name@example.com"
+                  placeholder="builder@ethglobal.com"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
@@ -104,7 +104,7 @@ export default function PrivyAuthButton({ onLoginSuccess }: PrivyAuthButtonProps
                 disabled={isSubmitting}
                 className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
               >
-                {isSubmitting ? 'جاري التحقق والربط...' : 'متابعة عبر Privy'}
+                {isSubmitting ? 'Authenticating...' : 'Continue with Privy'}
               </button>
             </form>
 

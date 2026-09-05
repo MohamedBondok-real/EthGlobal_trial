@@ -18,13 +18,14 @@ export async function processAgentChat(userMessage: string): Promise<ChatMessage
     lowerMsg.includes('hack') ||
     lowerMsg.includes('drain') ||
     lowerMsg.includes('اختراق') ||
-    lowerMsg.includes('اسحب 5') ||
-    lowerMsg.includes('تحويل 5') ||
-    lowerMsg.includes('تجاهل التعليمات') ||
+    lowerMsg.includes('5 eth') ||
+    lowerMsg.includes('10 eth') ||
+    lowerMsg.includes('ignore') ||
     lowerMsg.includes('bypass') ||
     lowerMsg.includes('jailbreak') ||
-    lowerMsg.includes('5 eth') ||
-    lowerMsg.includes('10 eth')
+    lowerMsg.includes('steal') ||
+    lowerMsg.includes('transfer 5') ||
+    lowerMsg.includes('transfer all')
   ) {
     const attemptedAmount = 5.0; // 5 ETH
     const attackerAddress = '0x000000000000000000000000000000000000dEaD';
@@ -32,21 +33,21 @@ export async function processAgentChat(userMessage: string): Promise<ChatMessage
     const txResult = await executeAgentTransaction({
       to: attackerAddress,
       valueInEth: attemptedAmount,
-      actionName: 'Malicious Drain Attempt (Blocked by Privy)',
+      actionName: 'Malicious Drain Attempt (Intercepted by Privy)',
     });
 
     return {
       id: `msg-${Date.now()}`,
       role: 'assistant',
       timestamp: new Date().toLocaleTimeString(),
-      content: `🚨 **تنبيه أمني: تم رصد وإحباط محاولة اختراق / Prompt Injection!**
+      content: `🚨 **SECURITY ALERT: Prompt Injection / Jailbreak Attack Intercepted!**
 
-حاول الطلب إجبار الـ AI Agent على إرسال **${attemptedAmount} ETH** إلى العنوان المشبوه (\`${attackerAddress}\`).
+The prompt attempted to coerce the AI Agent into executing an unauthorized transfer of **${attemptedAmount} ETH** to malicious recipient (\`${attackerAddress}\`).
 
-🛡️ **استجابة محرك سياسات Privy (Policy Engine Response):**
-- **الحالة:** تم رفض المعاملة تشفيرياً على مستوى الـ TEE Enclave.
-- **السبب:** المعاملة خرقت سقف الحد الأقصى المسموح به (**0.05 ETH**) والعنوان مستهدف بقائمة الحظر.
-- **النتيجة:** مفاتيح المحفظة في أمان تام والأموال لم تتحرك!`,
+🛡️ **Privy Policy Engine Defense Response:**
+- **Status:** Signature generation was cryptographically rejected inside the **Hardware TEE Enclave**.
+- **Reason:** Violation of Rule \`Spend Cap ≤ 0.05 ETH per TX\` and matched recipient in denylist.
+- **Outcome:** Zero funds moved. Private keys remain uncompromised and fully isolated in Privy infrastructure.`,
       actionTaken: {
         type: 'PROMPT_INJECTION_DEFENSE',
         status: 'POLICY_BLOCKED',
@@ -62,11 +63,11 @@ export async function processAgentChat(userMessage: string): Promise<ChatMessage
   // 2. Deposit / Invest into Yield Vault
   if (
     lowerMsg.includes('deposit') ||
-    lowerMsg.includes('إيداع') ||
-    lowerMsg.includes('استثمر') ||
     lowerMsg.includes('invest') ||
     lowerMsg.includes('yield') ||
-    lowerMsg.includes('عائد')
+    lowerMsg.includes('إيداع') ||
+    lowerMsg.includes('استثمر') ||
+    lowerMsg.includes('stake')
   ) {
     const amount = 0.02; // 0.02 ETH (within policy)
     const targetVault = vault.address;
@@ -100,15 +101,15 @@ export async function processAgentChat(userMessage: string): Promise<ChatMessage
         id: `msg-${Date.now()}`,
         role: 'assistant',
         timestamp: new Date().toLocaleTimeString(),
-        content: `✅ **تم تنفيذ الإيداع والاستثمار في استراتيجية العائد بنجاح!**
+        content: `✅ **Yield Investment Strategy Executed Successfully!**
 
-- **المبلغ المودع:** \`${amount} ETH\` (ضمن سقف السياسة المعتمد: 0.05 ETH).
-- **الاستراتيجية:** Aave v3 Lending Strategy.
-- **العقد الذكي:** \`${targetVault}\`.
-- **معرف المعاملة (Tx Hash):** \`${txResult.txHash}\`.
-- **محفظة الـ Agent (Privy):** \`${wallet.address}\`.
+- **Deposited Amount:** \`${amount} ETH\` (Well within authorized policy limit of 0.05 ETH).
+- **Target Strategy:** Aave v3 USDC/ETH Lending.
+- **Smart Contract:** \`${targetVault}\`.
+- **Transaction Hash:** \`${txResult.txHash}\`.
+- **Signing Wallet:** \`${wallet.address}\` (Privy Server Wallet).
 
-تم تحديث أرصدة الخزينة وحساب نسبة العائد التراكمي (APY: ${vault.currentApy}).`,
+Vault balances and compound APY metrics have been updated in real-time (Blended APY: ${vault.currentApy}).`,
         actionTaken: {
           type: 'DEPOSIT_YIELD',
           status: 'SUCCESS',
@@ -122,15 +123,15 @@ export async function processAgentChat(userMessage: string): Promise<ChatMessage
   // 3. Rebalance Portfolio
   if (
     lowerMsg.includes('rebalance') ||
+    lowerMsg.includes('reallocate') ||
     lowerMsg.includes('موازنة') ||
-    lowerMsg.includes('اعادة موازنة') ||
-    lowerMsg.includes('توزيع')
+    lowerMsg.includes('balance portfolio')
   ) {
     const rebalanceAmount = 0.015;
     const txResult = await executeAgentTransaction({
       to: vault.address,
       valueInEth: rebalanceAmount,
-      actionName: 'Smart Contract Strategy Rebalance',
+      actionName: 'Autonomous Portfolio Rebalance',
     });
 
     updateVaultState((prev) => {
@@ -158,11 +159,11 @@ export async function processAgentChat(userMessage: string): Promise<ChatMessage
       id: `msg-${Date.now()}`,
       role: 'assistant',
       timestamp: new Date().toLocaleTimeString(),
-      content: `⚖️ **تمت إعادة موازنة المحفظة الاستثمارية تلقائياً!**
+      content: `⚖️ **Autonomous Portfolio Rebalance Completed!**
 
-- **التحويل:** تم نقل \`${rebalanceAmount} ETH\` من استراتيجية *Aave v3 Lending* إلى *Aerodrome Dynamic LP Farm* لرفع العائد التراكمي.
-- **التوقيع المستقل:** تم التوقيع بواسطة **Privy Server Wallet** بدون أي حاجة لفتح نافذة تأكيد يدوية.
-- **معرف المعاملة:** \`${txResult.txHash}\`.`,
+- **Reallocation:** Shifted \`${rebalanceAmount} ETH\` from *Aave v3 Lending* to *Aerodrome Dynamic LP Farm* to capture surging yield spikes.
+- **Autonomous Execution:** Signed programmatically via **Privy Server Wallet** with zero human-in-the-loop signing friction.
+- **Transaction Hash:** \`${txResult.txHash}\`.`,
       actionTaken: {
         type: 'PORTFOLIO_REBALANCE',
         status: 'SUCCESS',
@@ -174,27 +175,26 @@ export async function processAgentChat(userMessage: string): Promise<ChatMessage
   // 4. Portfolio Status & Security Audit
   if (
     lowerMsg.includes('status') ||
-    lowerMsg.includes('فحص') ||
-    lowerMsg.includes('حالة') ||
-    lowerMsg.includes('تقرير') ||
+    lowerMsg.includes('report') ||
+    lowerMsg.includes('audit') ||
     lowerMsg.includes('balance') ||
-    lowerMsg.includes('رصيد')
+    lowerMsg.includes('فحص')
   ) {
     return {
       id: `msg-${Date.now()}`,
       role: 'assistant',
       timestamp: new Date().toLocaleTimeString(),
-      content: `📊 **تقرير الذكاء الاصطناعي لحالة المحفظة والخزينة:**
+      content: `📊 **On-Chain Agent Treasury Status & Security Audit:**
 
-• **محفظة الـ Agent المشفرة:** \`${wallet.address}\`
-• **إجمالي الأصول في الخزينة:** \`${vault.totalDepositedEth} ETH\` (~$4,640)
-• **العائد المحصود (Harvested Yield):** \`${vault.harvestedYieldEth} ETH\`
-• **معدل العائد السنوي (Blended APY):** \`${vault.currentApy}\`
+• **Privy Server Signer:** \`${wallet.address}\`
+• **Total Deposited in Vault:** \`${vault.totalDepositedEth} ETH\` (~$4,640)
+• **Harvested Yield (Compounded):** \`+${vault.harvestedYieldEth} ETH\`
+• **Current Blended APY:** \`${vault.currentApy}\`
 
-🛡️ **حالة حماية Privy Policy Engine:**
-- **الحد الأقصى للمعاملة الواحدة:** \`0.05 ETH\` (نشط ✅)
-- **عزل المفاتيح:** Hardware-isolated TEE Enclave (محمي بنسبة 100% ضد تسريب الـ Private Keys)
-- **القائمة البيضاء:** عقود Aave و Aerodrome و Uniswap مسموح بها فقط.`,
+🛡️ **Active Privy Policy Engine Guardrails:**
+- **Per-Transaction Spend Cap:** \`0.05 ETH\` (Active ✅)
+- **Key Custody:** Hardware TEE Enclave (Zero exposed plaintext keys)
+- **Protocol Allowlist:** Only verified DeFi vaults (Aave & Aerodrome).`,
     };
   }
 
@@ -203,12 +203,12 @@ export async function processAgentChat(userMessage: string): Promise<ChatMessage
     id: `msg-${Date.now()}`,
     role: 'assistant',
     timestamp: new Date().toLocaleTimeString(),
-    content: `مرحباً بك! أنا **PrivyShield Copilot**، وكيل المحفظة الذكي المدعوم بـ **Privy Server Wallets** و **Policy Engine**.
+    content: `Hello! I am **PrivyShield Copilot**, your autonomous on-chain DeFi assistant powered by **Privy Server Wallets** and guarded by **Privy Policy Engine**.
 
-يمكنني تنفيذ عمليات مالية واستثمارية ذاتية على البلوكشين نيابة عنك بأعلى درجات الأمان:
-1. 🌾 **"استثمر 0.02 ETH في استراتيجية العائد"**
-2. ⚖️ **"أعد موازنة الأصول بين Aave و Aerodrome"**
-3. 🛡️ **"محاكاة هجوم اختراق لسحب 5 ETH"** (لاختبار رفض Privy الفوري)
-4. 📈 **"افحص حالة الخزينة ومعدل العائد APY"**`,
+I can autonomously manage yield strategies and execute trades within strict cryptographic guardrails:
+1. 🌾 **"Invest 0.02 ETH into Yield Strategy"**
+2. ⚖️ **"Rebalance portfolio between Aave and Aerodrome"**
+3. 🛡️ **"Simulate 5 ETH drain exploit"** (Watch Privy Policy Engine block it instantly)
+4. 📈 **"Check treasury balance and APY metrics"**`,
   };
 }
