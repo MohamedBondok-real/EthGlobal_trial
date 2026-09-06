@@ -12,3 +12,5 @@ yarn-error.log*
 .turbo
 .vercel
 uploads
+.npm
+privy-agent-shield.zip

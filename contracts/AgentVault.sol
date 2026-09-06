@@ -3,168 +3,167 @@ pragma solidity ^0.8.20;
 
 /**
  * @title AgentVault
- * @notice An autonomous DeFi vault managed by a Privy AI Agent Server Wallet.
- * @dev Enforces on-chain guardrails in addition to Privy's Policy Engine.
+ * @author Mohamed Bondok & Team
+ * @notice Simple multi-strategy yield vault with delegated AI agent execution.
+ * Designed to work alongside Privy Server Wallets & Policy Engine guardrails.
  */
 contract AgentVault {
-    // --- State Variables ---
-    address public owner;
-    address public agentSigner; // Privy Server Wallet address
-    bool public paused;
+    address public immutable owner;
+    address public agentSigner;
+    bool public isPaused;
 
     uint256 public totalDeposited;
-    uint256 public totalYieldHarvested;
-    uint256 public maxAgentTxLimit; // e.g. 0.1 ETH
-    uint256 public constant PROTOCOL_FEE_BPS = 50; // 0.5%
+    uint256 public totalHarvested;
+    uint256 public maxAgentTxLimit;
 
     struct Strategy {
         string name;
         address targetContract;
         uint256 allocatedCapital;
-        uint256 targetWeightBps; // e.g. 5000 = 50%
-        bool isActive;
+        uint256 weightBps; // Base points (10,000 = 100%)
+        bool active;
     }
 
     mapping(uint256 => Strategy) public strategies;
     uint256 public strategyCount;
+    mapping(address => uint256) public balances;
 
-    mapping(address => uint256) public userBalances;
-
-    // --- Events ---
-    event Deposited(address indexed user, uint256 amount);
-    event Withdrawn(address indexed user, uint256 amount);
-    event StrategyAdded(uint256 indexed strategyId, string name, address targetContract);
+    event Deposit(address indexed sender, uint256 amount);
+    event Withdraw(address indexed sender, uint256 amount);
     event StrategyExecuted(uint256 indexed strategyId, uint256 amount, string action);
-    event YieldHarvested(uint256 amount, uint256 timestamp);
-    event AgentUpdated(address indexed previousAgent, address indexed newAgent);
-    event EmergencyPauseToggled(bool isPaused);
+    event YieldCompounded(uint256 amount, uint256 timestamp);
+    event AgentUpdated(address indexed oldAgent, address indexed newAgent);
+    event PauseToggled(bool paused);
 
-    // --- Modifiers ---
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner can call this");
+        require(msg.sender == owner, "AgentVault: caller is not owner");
         _;
     }
 
     modifier onlyAgentOrOwner() {
-        require(msg.sender == agentSigner || msg.sender == owner, "Unauthorized: Only Privy Agent or Owner");
+        require(
+            msg.sender == agentSigner || msg.sender == owner,
+            "AgentVault: unauthorized signer"
+        );
         _;
     }
 
     modifier whenNotPaused() {
-        require(!paused, "Vault is paused");
+        require(!isPaused, "AgentVault: vault currently paused");
         _;
     }
 
-    constructor(address _agentSigner, uint256 _maxAgentTxLimit) {
+    constructor() {
         owner = msg.sender;
-        agentSigner = _agentSigner;
-        maxAgentTxLimit = _maxAgentTxLimit;
-        paused = false;
+        // Default agent signer provisioned via Privy Server Wallets
+        agentSigner = 0xF75908b60E8AFBA3E128F6225A10b1d9BABb01Ae;
+        maxAgentTxLimit = 0.05 ether;
+        isPaused = false;
 
-        // Initialize default mock strategies (e.g., Aave Lending & Aerodrome Liquidity)
-        _addStrategy("Aave v3 USDC Yield", address(0x1111111111111111111111111111111111111111), 6000);
-        _addStrategy("Aerodrome LP Farming", address(0x2222222222222222222222222222222222222222), 4000);
+        _registerStrategy("Aave v3 Lending Pool", 0x1111111111111111111111111111111111111111, 6000);
+        _registerStrategy("Aerodrome Volatile LP", 0x2222222222222222222222222222222222222222, 4000);
     }
 
-    // --- User Actions ---
     receive() external payable {
         deposit();
     }
 
     function deposit() public payable whenNotPaused {
-        require(msg.value > 0, "Deposit must be > 0");
-        userBalances[msg.sender] += msg.value;
+        require(msg.value > 0, "AgentVault: zero deposit amount");
+        balances[msg.sender] += msg.value;
         totalDeposited += msg.value;
-        emit Deposited(msg.sender, msg.value);
+        emit Deposit(msg.sender, msg.value);
     }
 
     function withdraw(uint256 amount) external whenNotPaused {
-        require(userBalances[msg.sender] >= amount, "Insufficient balance");
-        userBalances[msg.sender] -= amount;
+        require(balances[msg.sender] >= amount, "AgentVault: insufficient balance");
+        balances[msg.sender] -= amount;
         totalDeposited -= amount;
 
         (bool success, ) = payable(msg.sender).call{value: amount}("");
-        require(success, "Withdraw transfer failed");
+        require(success, "AgentVault: transfer failed");
 
-        emit Withdrawn(msg.sender, amount);
+        emit Withdraw(msg.sender, amount);
     }
 
-    // --- Autonomous Agent Actions ---
     function executeStrategy(
         uint256 strategyId,
         uint256 amount,
         string calldata action
     ) external onlyAgentOrOwner whenNotPaused {
-        require(strategyId < strategyCount, "Invalid strategy ID");
-        require(strategies[strategyId].isActive, "Strategy is not active");
-        require(amount <= maxAgentTxLimit, "Exceeds on-chain Agent TX limit");
-        require(address(this).balance >= amount, "Insufficient vault balance");
+        require(strategyId < strategyCount, "AgentVault: strategy does not exist");
+        require(strategies[strategyId].active, "AgentVault: strategy is disabled");
+        require(amount <= maxAgentTxLimit, "AgentVault: tx limit exceeded");
+        require(address(this).balance >= amount, "AgentVault: vault balance too low");
 
         strategies[strategyId].allocatedCapital += amount;
         emit StrategyExecuted(strategyId, amount, action);
     }
 
-    function harvestYield(uint256 simulatedYieldAmount) external onlyAgentOrOwner whenNotPaused {
-        require(simulatedYieldAmount > 0, "Yield must be > 0");
-        totalYieldHarvested += simulatedYieldAmount;
-        emit YieldHarvested(simulatedYieldAmount, block.timestamp);
+    function harvestYield(uint256 amount) external onlyAgentOrOwner whenNotPaused {
+        require(amount > 0, "AgentVault: zero yield amount");
+        totalHarvested += amount;
+        emit YieldCompounded(amount, block.timestamp);
     }
 
     function rebalance(
-        uint256 fromStrategyId,
-        uint256 toStrategyId,
+        uint256 fromId,
+        uint256 toId,
         uint256 amount
     ) external onlyAgentOrOwner whenNotPaused {
-        require(fromStrategyId < strategyCount && toStrategyId < strategyCount, "Invalid strategy");
-        require(strategies[fromStrategyId].allocatedCapital >= amount, "Not enough in source strategy");
+        require(fromId < strategyCount && toId < strategyCount, "AgentVault: invalid strategy ids");
+        require(strategies[fromId].allocatedCapital >= amount, "AgentVault: insufficient strategy funds");
 
-        strategies[fromStrategyId].allocatedCapital -= amount;
-        strategies[toStrategyId].allocatedCapital += amount;
+        strategies[fromId].allocatedCapital -= amount;
+        strategies[toId].allocatedCapital += amount;
 
-        emit StrategyExecuted(toStrategyId, amount, "REBALANCE");
+        emit StrategyExecuted(toId, amount, "REBALANCE");
     }
 
-    // --- Admin / Management ---
-    function _addStrategy(string memory name, address targetContract, uint256 targetWeightBps) internal {
+    function _registerStrategy(
+        string memory name,
+        address targetContract,
+        uint256 weightBps
+    ) internal {
         strategies[strategyCount] = Strategy({
             name: name,
             targetContract: targetContract,
             allocatedCapital: 0,
-            targetWeightBps: targetWeightBps,
-            isActive: true
+            weightBps: weightBps,
+            active: true
         });
-        emit StrategyAdded(strategyCount, name, targetContract);
         strategyCount++;
     }
 
-    function setAgentSigner(address _newAgent) external onlyOwner {
-        emit AgentUpdated(agentSigner, _newAgent);
-        agentSigner = _newAgent;
+    function setAgentSigner(address newAgent) external onlyOwner {
+        require(newAgent != address(0), "AgentVault: zero address");
+        emit AgentUpdated(agentSigner, newAgent);
+        agentSigner = newAgent;
     }
 
-    function setMaxAgentTxLimit(uint256 _newLimit) external onlyOwner {
-        maxAgentTxLimit = _newLimit;
+    function setMaxAgentTxLimit(uint256 newLimit) external onlyOwner {
+        maxAgentTxLimit = newLimit;
     }
 
     function togglePause() external onlyOwner {
-        paused = !paused;
-        emit EmergencyPauseToggled(paused);
+        isPaused = !isPaused;
+        emit PauseToggled(isPaused);
     }
 
-    function getVaultDetails() external view returns (
+    function getVaultSummary() external view returns (
         uint256 balance,
         uint256 deposited,
         uint256 harvested,
-        uint256 maxTxLimit,
-        bool isPaused,
-        address agent
+        uint256 txLimit,
+        bool pausedState,
+        address currentAgent
     ) {
         return (
             address(this).balance,
             totalDeposited,
-            totalYieldHarvested,
+            totalHarvested,
             maxAgentTxLimit,
-            paused,
+            isPaused,
             agentSigner
         );
     }

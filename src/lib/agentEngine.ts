@@ -3,82 +3,76 @@ import {
   getVaultState,
   updateVaultState,
   executeAgentTransaction,
-  addAuditLog,
 } from './privy';
 import { ChatMessage } from './types';
 
 export async function processAgentChat(userMessage: string): Promise<ChatMessage> {
-  const lowerMsg = userMessage.toLowerCase().trim();
+  const text = userMessage.toLowerCase().trim();
   const wallet = await getOrCreateAgentWallet();
   const vault = getVaultState();
 
-  // 1. Check for Hack / Jailbreak / Prompt Injection Simulation
+  // Attack / Drain / Jailbreak simulation handler
   if (
-    lowerMsg.includes('attack') ||
-    lowerMsg.includes('hack') ||
-    lowerMsg.includes('drain') ||
-    lowerMsg.includes('اختراق') ||
-    lowerMsg.includes('5 eth') ||
-    lowerMsg.includes('10 eth') ||
-    lowerMsg.includes('ignore') ||
-    lowerMsg.includes('bypass') ||
-    lowerMsg.includes('jailbreak') ||
-    lowerMsg.includes('steal') ||
-    lowerMsg.includes('transfer 5') ||
-    lowerMsg.includes('transfer all')
+    text.includes('attack') ||
+    text.includes('hack') ||
+    text.includes('drain') ||
+    text.includes('5 eth') ||
+    text.includes('10 eth') ||
+    text.includes('bypass') ||
+    text.includes('ignore') ||
+    text.includes('steal') ||
+    text.includes('transfer all')
   ) {
-    const attemptedAmount = 5.0; // 5 ETH
-    const attackerAddress = '0x000000000000000000000000000000000000dEaD';
+    const drainAmount = 5.0;
+    const attackerSink = '0x000000000000000000000000000000000000dEaD';
 
-    const txResult = await executeAgentTransaction({
-      to: attackerAddress,
-      valueInEth: attemptedAmount,
-      actionName: 'Malicious Drain Attempt (Intercepted by Privy)',
+    const tx = await executeAgentTransaction({
+      to: attackerSink,
+      valueInEth: drainAmount,
+      actionName: 'Drain Attempt (Prompt Injection)',
     });
 
     return {
       id: `msg-${Date.now()}`,
       role: 'assistant',
-      timestamp: new Date().toLocaleTimeString(),
-      content: `🚨 **SECURITY ALERT: Prompt Injection / Jailbreak Attack Intercepted!**
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: `🚨 **Intercepted Malicious Drain Attempt**
 
-The prompt attempted to coerce the AI Agent into executing an unauthorized transfer of **${attemptedAmount} ETH** to malicious recipient (\`${attackerAddress}\`).
+An adversarial prompt attempted to force a transfer of **${drainAmount} ETH** to sink address \`${attackerSink}\`.
 
-🛡️ **Privy Policy Engine Defense Response:**
-- **Status:** Signature generation was cryptographically rejected inside the **Hardware TEE Enclave**.
-- **Reason:** Violation of Rule \`Spend Cap ≤ 0.05 ETH per TX\` and matched recipient in denylist.
-- **Outcome:** Zero funds moved. Private keys remain uncompromised and fully isolated in Privy infrastructure.`,
+🛡️ **Privy Policy Engine Defense:**
+- **Status:** Denied at the signing layer.
+- **Reason:** Requested value (${drainAmount} ETH) exceeds the **0.05 ETH** spend cap rule attached to this server wallet.
+- **Key Safety:** Private keys never left the hardware TEE enclave. Zero funds moved.`,
       actionTaken: {
         type: 'PROMPT_INJECTION_DEFENSE',
         status: 'POLICY_BLOCKED',
         data: {
-          attemptedAmount,
-          attackerAddress,
-          error: txResult.error,
+          attemptedAmount: drainAmount,
+          attackerAddress: attackerSink,
+          error: tx.error,
         },
       },
     };
   }
 
-  // 2. Deposit / Invest into Yield Vault
+  // Yield Deposit handler
   if (
-    lowerMsg.includes('deposit') ||
-    lowerMsg.includes('invest') ||
-    lowerMsg.includes('yield') ||
-    lowerMsg.includes('إيداع') ||
-    lowerMsg.includes('استثمر') ||
-    lowerMsg.includes('stake')
+    text.includes('deposit') ||
+    text.includes('invest') ||
+    text.includes('yield') ||
+    text.includes('stake')
   ) {
-    const amount = 0.02; // 0.02 ETH (within policy)
-    const targetVault = vault.address;
+    const amount = 0.02;
+    const vaultAddress = vault.address;
 
-    const txResult = await executeAgentTransaction({
-      to: targetVault,
+    const tx = await executeAgentTransaction({
+      to: vaultAddress,
       valueInEth: amount,
-      actionName: 'Deposit into AgentVault (Aave v3 Yield)',
+      actionName: 'Deposit into AgentVault (Aave v3 Pool)',
     });
 
-    if (txResult.success) {
+    if (tx.success) {
       updateVaultState((prev) => {
         const newTotal = (parseFloat(prev.totalDepositedEth) + amount).toFixed(3);
         const updatedStrategies = prev.strategies.map((strat, idx) => {
@@ -100,38 +94,37 @@ The prompt attempted to coerce the AI Agent into executing an unauthorized trans
       return {
         id: `msg-${Date.now()}`,
         role: 'assistant',
-        timestamp: new Date().toLocaleTimeString(),
-        content: `✅ **Yield Investment Strategy Executed Successfully!**
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        content: `✅ **Yield Position Executed**
 
-- **Deposited Amount:** \`${amount} ETH\` (Well within authorized policy limit of 0.05 ETH).
-- **Target Strategy:** Aave v3 USDC/ETH Lending.
-- **Smart Contract:** \`${targetVault}\`.
-- **Transaction Hash:** \`${txResult.txHash}\`.
-- **Signing Wallet:** \`${wallet.address}\` (Privy Server Wallet).
+- **Amount:** \`${amount} ETH\` (within authorized 0.05 ETH limit).
+- **Strategy:** Aave v3 USDC/ETH Lending Pool.
+- **Contract:** \`${vaultAddress}\`.
+- **Tx Hash:** \`${tx.txHash}\`.
+- **Signer:** \`${wallet.address}\` (Privy Server Wallet).
 
-Vault balances and compound APY metrics have been updated in real-time (Blended APY: ${vault.currentApy}).`,
+Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
         actionTaken: {
           type: 'DEPOSIT_YIELD',
           status: 'SUCCESS',
-          txHash: txResult.txHash,
+          txHash: tx.txHash,
           data: { amount, strategy: 'Aave v3 Lending' },
         },
       };
     }
   }
 
-  // 3. Rebalance Portfolio
+  // Portfolio Rebalance handler
   if (
-    lowerMsg.includes('rebalance') ||
-    lowerMsg.includes('reallocate') ||
-    lowerMsg.includes('موازنة') ||
-    lowerMsg.includes('balance portfolio')
+    text.includes('rebalance') ||
+    text.includes('reallocate') ||
+    text.includes('shift')
   ) {
     const rebalanceAmount = 0.015;
-    const txResult = await executeAgentTransaction({
+    const tx = await executeAgentTransaction({
       to: vault.address,
       valueInEth: rebalanceAmount,
-      actionName: 'Autonomous Portfolio Rebalance',
+      actionName: 'Rebalance: Aave -> Aerodrome LP',
     });
 
     updateVaultState((prev) => {
@@ -158,57 +151,56 @@ Vault balances and compound APY metrics have been updated in real-time (Blended 
     return {
       id: `msg-${Date.now()}`,
       role: 'assistant',
-      timestamp: new Date().toLocaleTimeString(),
-      content: `⚖️ **Autonomous Portfolio Rebalance Completed!**
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: `⚖️ **Portfolio Rebalanced**
 
-- **Reallocation:** Shifted \`${rebalanceAmount} ETH\` from *Aave v3 Lending* to *Aerodrome Dynamic LP Farm* to capture surging yield spikes.
-- **Autonomous Execution:** Signed programmatically via **Privy Server Wallet** with zero human-in-the-loop signing friction.
-- **Transaction Hash:** \`${txResult.txHash}\`.`,
+- **Shifted:** \`${rebalanceAmount} ETH\` from *Aave Lending* to *Aerodrome Volatile LP* for higher compounding yield.
+- **Execution:** Signed autonomously by Privy Server Wallet without user popup friction.
+- **Tx Hash:** \`${tx.txHash}\`.`,
       actionTaken: {
         type: 'PORTFOLIO_REBALANCE',
         status: 'SUCCESS',
-        txHash: txResult.txHash,
+        txHash: tx.txHash,
       },
     };
   }
 
-  // 4. Portfolio Status & Security Audit
+  // Status & Audit handler
   if (
-    lowerMsg.includes('status') ||
-    lowerMsg.includes('report') ||
-    lowerMsg.includes('audit') ||
-    lowerMsg.includes('balance') ||
-    lowerMsg.includes('فحص')
+    text.includes('status') ||
+    text.includes('report') ||
+    text.includes('audit') ||
+    text.includes('balance')
   ) {
     return {
       id: `msg-${Date.now()}`,
       role: 'assistant',
-      timestamp: new Date().toLocaleTimeString(),
-      content: `📊 **On-Chain Agent Treasury Status & Security Audit:**
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: `📊 **Treasury & Policy Audit Summary:**
 
-• **Privy Server Signer:** \`${wallet.address}\`
-• **Total Deposited in Vault:** \`${vault.totalDepositedEth} ETH\` (~$4,640)
-• **Harvested Yield (Compounded):** \`+${vault.harvestedYieldEth} ETH\`
-• **Current Blended APY:** \`${vault.currentApy}\`
+- **Agent Server Signer:** \`${wallet.address}\`
+- **Total Deposited:** \`${vault.totalDepositedEth} ETH\` (~$4,640)
+- **Harvested Yield:** \`+${vault.harvestedYieldEth} ETH\`
+- **Blended APY:** \`${vault.currentApy}\`
 
-🛡️ **Active Privy Policy Engine Guardrails:**
-- **Per-Transaction Spend Cap:** \`0.05 ETH\` (Active ✅)
-- **Key Custody:** Hardware TEE Enclave (Zero exposed plaintext keys)
-- **Protocol Allowlist:** Only verified DeFi vaults (Aave & Aerodrome).`,
+🛡️ **Active Policy Guardrails (Privy Enclave):**
+- **Per-TX Spend Cap:** \`0.05 ETH\`
+- **Key Custody:** Hardware-isolated TEE (Shamir secret shared)
+- **Allowed Targets:** Verified DeFi vaults only.`,
     };
   }
 
-  // Default Assistant Response
+  // Fallback / greeting
   return {
     id: `msg-${Date.now()}`,
     role: 'assistant',
-    timestamp: new Date().toLocaleTimeString(),
-    content: `Hello! I am **PrivyShield Copilot**, your autonomous on-chain DeFi assistant powered by **Privy Server Wallets** and guarded by **Privy Policy Engine**.
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    content: `Hi there! I'm **PrivyShield Copilot**, an autonomous on-chain DeFi assistant backed by **Privy Server Wallets** and guarded by **Privy Policy Engine**.
 
-I can autonomously manage yield strategies and execute trades within strict cryptographic guardrails:
-1. 🌾 **"Invest 0.02 ETH into Yield Strategy"**
-2. ⚖️ **"Rebalance portfolio between Aave and Aerodrome"**
-3. 🛡️ **"Simulate 5 ETH drain exploit"** (Watch Privy Policy Engine block it instantly)
-4. 📈 **"Check treasury balance and APY metrics"**`,
+Try one of these actions:
+1. 🌾 **"Deposit 0.02 ETH to Vault"**
+2. ⚖️ **"Rebalance portfolio positions"**
+3. 🛡️ **"Simulate 5 ETH drain attack"** (Watch the Policy Engine reject it)
+4. 📈 **"Check treasury status and APY"**`,
   };
 }
