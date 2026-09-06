@@ -1,5 +1,6 @@
 import { PrivyClient } from '@privy-io/server-auth';
 import { PrivyPolicy, AgentWalletData, AuditLogItem, VaultState } from './types';
+import { VAULT_CONTRACT_ADDRESS } from './contract';
 
 const APP_ID = process.env.PRIVY_APP_ID || 'cmtojqa83003h0cjxy26txns2';
 const APP_SECRET = process.env.PRIVY_APP_SECRET || 'privy_app_secret_3j2zqmXpeFfAKXeFQXheUHjpCw65sH6s2gPqhT5Gu8W4qPbkjy4uJjWAdtwB88aaVoww738no3Juir4Ba2XptGLR';
@@ -31,7 +32,7 @@ let auditLogs: AuditLogItem[] = [
 ];
 
 let vaultState: VaultState = {
-  address: '0x3F8B3e8F6B738bC2547b7bA9C8aE4E594bDb91D4',
+  address: VAULT_CONTRACT_ADDRESS,
   totalDepositedEth: '1.450',
   harvestedYieldEth: '0.082',
   currentApy: '12.4%',
@@ -280,7 +281,7 @@ export async function executeAgentTransaction(params: {
     amount: `${params.valueInEth} ETH`,
     target: params.to,
     txHash: mockTxHash,
-    details: `Signed via Privy Server Wallet (${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}) within policy limits.`,
+    details: `Signed via Privy Server Wallet (${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}) to AgentVault (${params.to.slice(0, 6)}...${params.to.slice(-4)}).`,
   });
 
   return {
