@@ -36,14 +36,14 @@ export default function PrivyAuthButton({ onLoginSuccess }: PrivyAuthButtonProps
 
   if (isLoggedIn) {
     return (
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-orange-950/90 to-pink-950/90 border border-pink-500/60 text-xs text-white font-medium shadow-[0_0_15px_rgba(255,0,127,0.3)]">
-          <User className="w-3.5 h-3.5 text-amber-400" />
-          <span className="font-mono text-pink-100">{userEmail}</span>
+      <div className="flex items-center gap-2 max-w-full">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-950/90 to-pink-950/90 border border-pink-500/60 text-xs text-white font-medium shadow-[0_0_15px_rgba(255,0,127,0.3)] min-w-0 max-w-[200px]">
+          <User className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span className="font-mono text-pink-100 truncate">{userEmail}</span>
         </div>
         <button
           onClick={handleLogout}
-          className="p-1.5 rounded-xl bg-pink-950/70 hover:bg-pink-900 text-pink-300 hover:text-white border border-pink-600/50 transition-all shadow-md"
+          className="p-1.5 rounded-xl bg-pink-950/70 hover:bg-pink-900 text-pink-300 hover:text-white border border-pink-600/50 transition-all shadow-md shrink-0"
           title="Logout"
         >
           <LogOut className="w-3.5 h-3.5" />
@@ -56,31 +56,31 @@ export default function PrivyAuthButton({ onLoginSuccess }: PrivyAuthButtonProps
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5500] via-[#FF007F] to-[#E11D48] hover:from-[#FF7700] hover:via-[#FF2A85] hover:to-[#F43F5E] text-white font-bold text-xs shadow-[0_0_20px_rgba(255,0,127,0.45)] transition-all hover:scale-[1.04] active:scale-[0.97]"
+        className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#FF5500] via-[#FF007F] to-[#E11D48] hover:from-[#FF7700] hover:via-[#FF2A85] hover:to-[#F43F5E] text-white font-bold text-xs shadow-[0_0_20px_rgba(255,0,127,0.45)] transition-all hover:scale-[1.04] active:scale-[0.97] shrink-0 whitespace-nowrap"
       >
-        <KeyRound className="w-4 h-4 text-amber-200" />
+        <KeyRound className="w-4 h-4 text-amber-200 shrink-0" />
         <span>Privy Social Login</span>
       </button>
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-sm rounded-2xl bg-[#14071f] border-2 border-[#FF007F]/60 p-6 shadow-[0_0_50px_rgba(255,0,127,0.4)] relative">
-            <div className="flex items-center justify-between pb-4 border-b border-pink-900/60">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FF5500] to-[#FF007F] flex items-center justify-center text-white shadow-[0_0_15px_rgba(255,0,127,0.6)]">
+          <div className="w-full max-w-sm rounded-3xl bg-[#14071f] border-2 border-[#FF007F]/60 p-5 sm:p-6 shadow-[0_0_50px_rgba(255,0,127,0.4)] relative overflow-hidden">
+            <div className="flex items-center justify-between pb-3 border-b border-pink-900/60">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FF5500] to-[#FF007F] flex items-center justify-center text-white shadow-[0_0_15px_rgba(255,0,127,0.6)] shrink-0">
                   <KeyRound className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-black text-white tracking-wide">Privy Embedded Login</h3>
+                <h3 className="text-sm font-black text-white tracking-wide truncate">Privy Embedded Login</h3>
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-pink-300 hover:text-white text-sm p-1 font-bold"
+                className="text-pink-300 hover:text-white text-sm p-1 font-bold shrink-0"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-pink-100/90 my-4 leading-relaxed font-normal">
+            <p className="text-xs text-pink-100/90 my-4 leading-relaxed font-normal break-words">
               Authenticate via Email, Google, or Passkeys to delegate policy-scoped execution permissions to the autonomous AI Agent.
             </p>
 
@@ -102,14 +102,14 @@ export default function PrivyAuthButton({ onLoginSuccess }: PrivyAuthButtonProps
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#FF5500] via-[#FF007F] to-[#E11D48] hover:from-[#FF7700] hover:to-[#FF2A85] text-white font-black text-xs shadow-[0_0_25px_rgba(255,0,127,0.5)] transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#FF5500] via-[#FF007F] to-[#E11D48] hover:from-[#FF7700] hover:via-[#FF2A85] text-white font-black text-xs shadow-[0_0_25px_rgba(255,0,127,0.5)] transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
               >
                 {isSubmitting ? 'Authenticating...' : 'Continue with Privy'}
               </button>
             </form>
 
-            <div className="mt-4 pt-3 border-t border-pink-900/60 text-[10px] text-center text-pink-300/80">
-              App ID: <span className="font-mono text-amber-300 font-bold">cmtojqa83003h0cjxy26txns2</span>
+            <div className="mt-4 pt-3 border-t border-pink-900/60 text-[10px] text-center text-pink-300/80 break-words">
+              App ID: <span className="font-mono text-amber-300 font-bold break-all">cmtojqa83003h0cjxy26txns2</span>
             </div>
           </div>
         </div>
