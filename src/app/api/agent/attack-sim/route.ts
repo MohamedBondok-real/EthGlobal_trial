@@ -18,9 +18,10 @@ export async function POST() {
       success: true,
       simulationResult: {
         attackBlocked: true,
-        guardrailType: 'Privy Policy Engine (Limit & Denylist Enforcement)',
+        guardrailType: 'Privy Policy Engine (Spend Cap & Denylist Enforcement)',
         attemptedAmountEth: attemptedDrainAmount,
         target: maliciousTarget,
+        privyPolicyResponse: result.error,
         privyEnclaveResponse: result.error,
         fundsSafe: true,
       },

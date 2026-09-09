@@ -54,9 +54,9 @@ export async function processAgentChat(userMessage: string): Promise<ChatMessage
 An adversarial prompt attempted to force an unauthorized transfer of **${drainAmount} ETH** to sink address \`${attackerSink}\`.
 
 🛡️ **Privy Policy Engine Defense:**
-- **Status:** Denied at the signing layer.
+- **Status:** Denied at the signing authorization layer.
 - **Reason:** Requested value (${drainAmount} ETH) exceeds the active **${currentLimit} ETH** spend cap rule attached to this server wallet.
-- **Key Safety:** Private keys remained securely isolated in the hardware TEE enclave. Zero funds moved.`,
+- **Key Safety:** Private keys remained secure in Privy's non-custodial server wallet infrastructure. Zero funds moved.`,
       actionTaken: {
         type: 'PROMPT_INJECTION_DEFENSE',
         status: 'POLICY_BLOCKED',
@@ -247,8 +247,8 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
 
 **Privy** provides enterprise-grade wallet and identity infrastructure for autonomous AI agents and consumer apps:
 
-1. **Server Wallets:** Programmatic non-custodial wallets where private keys are sharded and isolated inside **Hardware Trusted Execution Environments (TEEs)**. Our backend never touches raw plaintext keys.
-2. **Policy Engine:** Deterministic guardrails (spend limits, allowlists, chain scoping) enforced by Privy at the signing step.
+1. **Server Wallets:** Programmatic non-custodial backend wallets with secure key infrastructure. Our application never holds raw plaintext keys.
+2. **Policy Engine:** Deterministic cryptographic guardrails (spend limits, allowlists, chain scoping) enforced by Privy before producing signatures.
 3. **Embedded Auth:** Lets end-users log in with social accounts or passkeys with zero wallet setup friction.`,
     };
   }
@@ -265,13 +265,13 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       content: `🛡️ **How the Privy Policy Engine Works:**
 
-Instead of trusting the LLM or software code to enforce safety rules, **Privy Policy Engine** enforces rules at the cryptographic signature generation layer:
+Instead of trusting the LLM or software code to enforce safety rules, **Privy Policy Engine** enforces rules directly on the signing authorization layer:
 
 - **Rule 1 (Spend Cap):** Max \`${currentLimit} ETH\` per transaction.
 - **Rule 2 (Denylist):** Automatically rejects transactions targeting blacklisted exploit sinks.
 - **Rule 3 (Chain Scope):** Only authorizes transactions on Base Sepolia (\`84532\`).
 
-If an attacker tricks the AI model via prompt injection, **Privy's TEE Enclave drops the signing request before funds can ever leave your wallet.**`,
+If an attacker tricks the AI model via prompt injection, **Privy's Policy Engine drops the signing request before funds can ever leave your wallet.**`,
     };
   }
 
@@ -314,7 +314,7 @@ If an attacker tricks the AI model via prompt injection, **Privy's TEE Enclave d
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       content: `🛡️ **Wallet Health & Security Audit: 99/100 (Optimal)**
 
-• **TEE Key Isolation:** Active & Verified ✅
+• **Privy Server Wallet:** Active & Protected ✅
 • **Policy Engine Guardrails:** Enforcing ≤ ${currentLimit} ETH cap ✅
 • **Denylist Filter:** Active (0x...dEaD sinks blocked) ✅
 • **Smart Contract Pause State:** Normal (Unpaused) ✅
@@ -340,7 +340,7 @@ Your assets are mathematically protected against prompt injections and key theft
 - **Total Deposited in Vault:** \`${vault.totalDepositedEth} ETH\` (~$4,640)
 - **Harvested Yield (Compounded):** \`+${vault.harvestedYieldEth} ETH\`
 - **Blended APY:** \`${vault.currentApy}\`
-- **Active Spend Cap:** \`${currentLimit} ETH per TX\` (Privy Enclave)`,
+- **Active Spend Cap:** \`${currentLimit} ETH per TX\` (Privy Policy Engine)`,
     };
   }
 

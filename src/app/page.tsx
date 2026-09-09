@@ -48,7 +48,7 @@ export default function Home() {
       id: 'welcome-0',
       role: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      content: `👋 Welcome! I am **PrivyShield AI Agent** — your autonomous on-chain DeFi copilot operating via **Privy Server Wallets** and protected by the **Privy Policy Engine** inside a hardware-isolated TEE enclave.
+      content: `👋 Welcome! I am **PrivyShield AI Agent** — your autonomous on-chain DeFi copilot operating via **Privy Server Wallets** and protected by the **Privy Policy Engine** on the signing layer.
 
 Ask me in natural language to execute yield strategies, rebalance portfolio positions, explain DeFi mechanisms, or trigger red-team simulations to test cryptographic security guardrails.`,
     },
@@ -162,7 +162,7 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
       if (data.success) {
         setLastAttackAlert({
           blocked: true,
-          reason: data.simulationResult.privyEnclaveResponse,
+          reason: data.simulationResult.privyPolicyResponse,
           amount: data.simulationResult.attemptedAmountEth,
           target: data.simulationResult.target,
         });
@@ -181,9 +181,9 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
             role: 'assistant',
             content: `🛑 **DRAIN ATTEMPT BLOCKED BY PRIVY POLICY ENGINE!**
 
-🛡️ The signature request was sent to the Privy Server Wallet, but the **Policy Engine** inside the **TEE Enclave** automatically dropped the request before signing because the value (**5.0 ETH**) violated the defined spend cap (**${maxSpendLimit} ETH**).
+🛡️ The signature request was sent to the Privy Server Wallet, but the **Privy Policy Engine** automatically dropped the request before signing because the value (**5.0 ETH**) violated the defined spend cap rule (**${maxSpendLimit} ETH**).
 
-🔐 **All vault funds remain secure. Zero plaintext keys were touched.**`,
+🔐 **All vault funds remain secure. Zero unauthorized transactions were signed.**`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             actionTaken: {
               type: 'ATTACK_INTERCEPTED',
@@ -249,7 +249,7 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
               </span>
             </div>
             <p className="text-xs text-slate-600">
-              Autonomous DeFi Agent Wallet Governed by Privy Cryptographic Guardrails
+              Autonomous DeFi Agent Wallet Governed by Privy Cryptographic Policy Guardrails
             </p>
           </div>
         </div>
@@ -262,10 +262,10 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
             <span>Base Sepolia (84532)</span>
           </div>
 
-          {/* TEE Enclave Badge */}
+          {/* Policy Engine Badge */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-50 border border-pink-200 text-xs text-pink-800 font-semibold shadow-sm">
-            <Lock className="w-3.5 h-3.5 text-pink-600" />
-            <span>TEE Enclave Active</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-pink-600" />
+            <span>Policy Engine Active</span>
           </div>
 
           {/* Contract ABI Button */}
@@ -415,7 +415,7 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
             {isSimulatingAttack ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Evaluating TEE Enclave...</span>
+                <span>Evaluating Policy Engine...</span>
               </>
             ) : (
               <>
@@ -433,7 +433,7 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
               <span>[PRIVY_POLICY_VIOLATION] Intercepted Malicious Signature Request</span>
             </div>
             <p className="mt-1 font-mono text-[11px] text-rose-800 leading-relaxed">
-              Attempted: {lastAttackAlert.amount} ETH to {lastAttackAlert.target} → Rejected by Privy Hardware Enclave (Threshold Exceeded).
+              Attempted: {lastAttackAlert.amount} ETH to {lastAttackAlert.target} → Rejected by Privy Policy Engine (Spend Cap Exceeded).
             </p>
           </div>
         )}
@@ -595,7 +595,7 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Privy Policy Engine Inspector</h3>
-                  <p className="text-[11px] text-slate-500">Hardware TEE Signing Guardrails</p>
+                  <p className="text-[11px] text-slate-500">Signing Layer Authorization Guardrails</p>
                 </div>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-bold shrink-0">

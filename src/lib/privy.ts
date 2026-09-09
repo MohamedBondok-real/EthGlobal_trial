@@ -20,8 +20,8 @@ let auditLogs: AuditLogItem[] = [
     timestamp: new Date(Date.now() - 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     type: 'SECURITY_ALERT',
     status: 'SUCCESS',
-    action: 'TEE Enclave Ready',
-    details: 'Privy server wallet provisioned inside hardware TEE with Shamir key sharding.',
+    action: 'Server Wallet Ready',
+    details: 'Privy server wallet provisioned with non-custodial cryptographic key isolation.',
   },
   {
     id: 'log-bootstrap-1',
@@ -251,14 +251,14 @@ export async function executeAgentTransaction(params: {
 
   // Policy Engine checks
   if (params.valueInEth > currentLimit) {
-    const errorMsg = `[PRIVY_POLICY_VIOLATION] Transaction value (${params.valueInEth} ETH) exceeds policy rule limit of ${currentLimit} ETH per TX. Privy TEE Signer refused signature.`;
+    const errorMsg = `[PRIVY_POLICY_VIOLATION] Transaction value (${params.valueInEth} ETH) exceeds policy rule limit of ${currentLimit} ETH per TX. Privy Policy Engine refused signature authorization.`;
     addAuditLog({
       type: 'POLICY_ENFORCEMENT',
       status: 'POLICY_BLOCKED',
       action: params.actionName,
       amount: `${params.valueInEth} ETH`,
       target: params.to,
-      details: `Rejected by Privy Policy Engine inside TEE before key reconstruction.`,
+      details: `Rejected by Privy Policy Engine before transaction signing.`,
       policyReason: `Spend cap violation: ${params.valueInEth} ETH > ${currentLimit} ETH limit.`,
     });
 
