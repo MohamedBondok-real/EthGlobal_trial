@@ -28,7 +28,8 @@ import {
   Info,
   CheckCircle2,
   XCircle,
-  HelpCircle
+  HelpCircle,
+  Wallet
 } from 'lucide-react';
 import PrivyAuthButton from '@/components/PrivyAuthButton';
 import { AgentWalletData, VaultState, AuditLogItem, ChatMessage } from '@/lib/types';
@@ -41,6 +42,7 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
   const [showContractModal, setShowContractModal] = useState<boolean>(false);
+  const [connectedUserWallet, setConnectedUserWallet] = useState<{ address: string; type: 'METAMASK' | 'PRIVY' } | null>(null);
 
   // Chat State
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -50,7 +52,7 @@ export default function Home() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       content: `👋 Welcome! I am **PrivyShield AI Agent** — your autonomous on-chain DeFi copilot operating via **Privy Server Wallets** and protected by the **Privy Policy Engine** on the signing layer.
 
-Ask me in natural language to execute yield strategies, rebalance portfolio positions, explain DeFi mechanisms, or trigger red-team simulations to test cryptographic security guardrails.`,
+You can connect your **MetaMask** or **Privy Social Wallet** above, and ask me in natural language to execute yield strategies, rebalance portfolio positions, explain DeFi mechanisms, or trigger red-team simulations to test cryptographic security guardrails.`,
     },
   ]);
   const [inputMsg, setInputMsg] = useState<string>('');
@@ -277,8 +279,10 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
             <span>Contract ABI</span>
           </button>
 
-          {/* Privy Auth Button */}
-          <PrivyAuthButton />
+          {/* Web3 / MetaMask / Privy Auth Button */}
+          <PrivyAuthButton
+            onWalletConnected={(addr, type) => setConnectedUserWallet({ address: addr, type })}
+          />
 
           {/* Refresh State */}
           <button
@@ -462,6 +466,12 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
 
           {/* Quick Action Suggestion Chips */}
           <div className="p-2.5 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2 overflow-x-auto text-xs">
+            {connectedUserWallet && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shrink-0">
+                <span>🦊</span>
+                <span>{connectedUserWallet.type === 'METAMASK' ? 'MetaMask Connected' : 'Privy Auth'}</span>
+              </div>
+            )}
             <span className="text-[11px] text-slate-500 font-bold shrink-0">Quick Prompts:</span>
             <button
               onClick={() => handleSendMessage('Invest 0.02 ETH into Yield Strategy')}
