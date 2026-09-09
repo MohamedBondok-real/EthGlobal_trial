@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #090D16;
-  --foreground: #F3F4F6;
+  --background: #08060B;
+  --foreground: #FFF1F2;
 }
 
 body {
@@ -20,40 +20,36 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0d1322;
+  background: #11091a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #252e42;
+  background: #3e1b4b;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b4660;
+  background: #ec4899;
 }
 
 .glass-panel {
-  background: rgba(17, 24, 39, 0.75);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(20, 11, 30, 0.78);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 110, 160, 0.14);
 }
 
 .glass-panel-glow {
-  background: rgba(17, 24, 39, 0.85);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  box-shadow: 0 0 25px rgba(99, 102, 241, 0.12);
+  background: rgba(26, 12, 38, 0.88);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 87, 34, 0.35);
+  box-shadow: 0 0 30px rgba(236, 72, 153, 0.22), inset 0 0 15px rgba(255, 87, 34, 0.08);
 }
 
-.badge-pulse {
-  position: relative;
+.sunset-text-gradient {
+  background: linear-gradient(135deg, #FF6B00 0%, #FF2E93 50%, #B026FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
-.badge-pulse::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 9999px;
-  border: 1px solid currentColor;
-  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+
+.sunset-border-glow {
+  border: 1px solid rgba(236, 72, 153, 0.35);
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);
 }

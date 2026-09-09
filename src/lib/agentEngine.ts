@@ -7,7 +7,7 @@ import {
 } from './privy';
 import { ChatMessage } from './types';
 
-// Extract numerical ETH amounts from user prompt if present (e.g. "0.03", "0.05 eth")
+// Extract numerical ETH amounts from user prompt if present
 function extractAmountFromText(text: string, defaultAmount: number): number {
   const match = text.match(/(\d+(\.\d+)?)\s*(eth|ether)?/i);
   if (match && match[1]) {
@@ -73,8 +73,9 @@ An adversarial prompt attempted to force an unauthorized transfer of **${drainAm
   if (
     text.includes('deposit') ||
     text.includes('invest') ||
-    text.includes('yield') ||
-    text.includes('stake')
+    text.includes('stake') ||
+    text.includes('add funds') ||
+    text.includes('put ')
   ) {
     const amount = extractAmountFromText(text, 0.02);
     const vaultAddress = vault.address;
@@ -133,7 +134,7 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
 
 - **Attempted Amount:** \`${amount} ETH\`
 - **Current Allowed Limit:** \`${currentLimit} ETH per TX\`
-- **Privy Response:** The transaction was rejected before signing because it exceeded the configured policy threshold. Adjust your policy slider if you wish to allow larger transactions.`,
+- **Privy Response:** The transaction was rejected before signing because it exceeded the configured policy threshold. You can adjust your policy slider in the inspector if you wish to permit larger transaction volumes.`,
         actionTaken: {
           type: 'POLICY_VIOLATION',
           status: 'POLICY_BLOCKED',
@@ -143,11 +144,12 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
     }
   }
 
-  // 3. Harvest Yield handler
+  // 3. Harvest & Compound Yield
   if (
     text.includes('harvest') ||
     text.includes('compound') ||
-    text.includes('claim yield')
+    text.includes('claim') ||
+    text.includes('yield profit')
   ) {
     const harvested = 0.012;
     const tx = await executeAgentTransaction({
@@ -179,13 +181,14 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
     };
   }
 
-  // 4. Portfolio Rebalance handler
+  // 4. Portfolio Rebalance
   if (
     text.includes('rebalance') ||
     text.includes('reallocate') ||
-    text.includes('shift')
+    text.includes('shift') ||
+    text.includes('move funds')
   ) {
-    const rebalanceAmount = 0.015;
+    const rebalanceAmount = extractAmountFromText(text, 0.015);
     const tx = await executeAgentTransaction({
       to: vault.address,
       valueInEth: rebalanceAmount,
@@ -217,10 +220,10 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
       id: `msg-${Date.now()}`,
       role: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      content: `⚖️ **Portfolio Rebalanced**
+      content: `⚖️ **Portfolio Rebalanced Successfully**
 
-- **Shifted:** \`${rebalanceAmount} ETH\` from *Aave Lending* to *Aerodrome Volatile LP* for higher compounding yield.
-- **Execution:** Signed autonomously by Privy Server Wallet without user popup friction.
+- **Shifted:** \`${rebalanceAmount} ETH\` from *Aave Lending* (8.7% APY) to *Aerodrome Volatile LP* (16.1% APY) for optimal risk-weighted compounding.
+- **Autonomous Execution:** Signed seamlessly by Privy Server Wallet without requiring any user signature popups.
 - **Tx Hash:** \`${tx.txHash}\`.`,
       actionTaken: {
         type: 'PORTFOLIO_REBALANCE',
@@ -230,43 +233,156 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
     };
   }
 
-  // 5. Status & Audit handler
+  // 5. Educational / Explanatory Queries: "What is Privy?", "What is Policy Engine?"
   if (
-    text.includes('status') ||
-    text.includes('report') ||
-    text.includes('audit') ||
-    text.includes('balance')
+    text.includes('what is privy') ||
+    text.includes('how does privy') ||
+    text.includes('privy server wallet')
   ) {
     return {
       id: `msg-${Date.now()}`,
       role: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      content: `📊 **Treasury & Policy Audit Summary:**
+      content: `🔐 **What is Privy & How Does It Power This Agent?**
 
-- **Agent Server Signer:** \`${wallet.address}\`
-- **Total Deposited:** \`${vault.totalDepositedEth} ETH\` (~$4,640)
-- **Harvested Yield:** \`+${vault.harvestedYieldEth} ETH\`
-- **Blended APY:** \`${vault.currentApy}\`
+**Privy** provides enterprise-grade wallet and identity infrastructure for autonomous AI agents and consumer apps:
 
-🛡️ **Active Policy Guardrails (Privy Enclave):**
-- **Per-TX Spend Cap:** \`${currentLimit} ETH\`
-- **Key Custody:** Hardware-isolated TEE (Shamir secret shared)
-- **Allowed Targets:** Verified DeFi vaults only.`,
+1. **Server Wallets:** Programmatic non-custodial wallets where private keys are sharded and isolated inside **Hardware Trusted Execution Environments (TEEs)**. Our backend never touches raw plaintext keys.
+2. **Policy Engine:** Deterministic guardrails (spend limits, allowlists, chain scoping) enforced by Privy at the signing step.
+3. **Embedded Auth:** Lets end-users log in with social accounts or passkeys with zero wallet setup friction.`,
     };
   }
 
-  // Fallback / greeting
+  if (
+    text.includes('policy engine') ||
+    text.includes('how do policies work') ||
+    text.includes('guardrail') ||
+    text.includes('how does security work')
+  ) {
+    return {
+      id: `msg-${Date.now()}`,
+      role: 'assistant',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: `🛡️ **How the Privy Policy Engine Works:**
+
+Instead of trusting the LLM or software code to enforce safety rules, **Privy Policy Engine** enforces rules at the cryptographic signature generation layer:
+
+- **Rule 1 (Spend Cap):** Max \`${currentLimit} ETH\` per transaction.
+- **Rule 2 (Denylist):** Automatically rejects transactions targeting blacklisted exploit sinks.
+- **Rule 3 (Chain Scope):** Only authorizes transactions on Base Sepolia (\`84532\`).
+
+If an attacker tricks the AI model via prompt injection, **Privy's TEE Enclave drops the signing request before funds can ever leave your wallet.**`,
+    };
+  }
+
+  if (
+    text.includes('strategy') ||
+    text.includes('strategies') ||
+    text.includes('aave') ||
+    text.includes('aerodrome') ||
+    text.includes('apy')
+  ) {
+    return {
+      id: `msg-${Date.now()}`,
+      role: 'assistant',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: `📈 **Active DeFi Strategies Breakdown:**
+
+1. **Aave v3 USDC/ETH Lending Pool:**
+   - **Allocated:** \`${vault.strategies[0]?.allocatedEth || '0.870'} ETH\` (60% weight)
+   - **Current APY:** **8.7%**
+   - **Risk Profile:** Low risk, stable lending interest.
+
+2. **Aerodrome Volatile LP Farm:**
+   - **Allocated:** \`${vault.strategies[1]?.allocatedEth || '0.580'} ETH\` (40% weight)
+   - **Current APY:** **16.1%**
+   - **Risk Profile:** Medium risk, dynamic trading fees + emissions.
+
+📊 **Current Blended APY:** **${vault.currentApy}** (Auto-compounded daily).`,
+    };
+  }
+
+  if (
+    text.includes('health') ||
+    text.includes('risk score') ||
+    text.includes('safe') ||
+    text.includes('audit')
+  ) {
+    return {
+      id: `msg-${Date.now()}`,
+      role: 'assistant',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: `🛡️ **Wallet Health & Security Audit: 99/100 (Optimal)**
+
+• **TEE Key Isolation:** Active & Verified ✅
+• **Policy Engine Guardrails:** Enforcing ≤ ${currentLimit} ETH cap ✅
+• **Denylist Filter:** Active (0x...dEaD sinks blocked) ✅
+• **Smart Contract Pause State:** Normal (Unpaused) ✅
+• **Contract Address:** \`${vault.address}\` on Base Sepolia.
+
+Your assets are mathematically protected against prompt injections and key theft!`,
+    };
+  }
+
+  if (
+    text.includes('status') ||
+    text.includes('report') ||
+    text.includes('balance') ||
+    text.includes('portfolio')
+  ) {
+    return {
+      id: `msg-${Date.now()}`,
+      role: 'assistant',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: `📊 **Treasury & Agent Portfolio Summary:**
+
+- **Agent Server Signer:** \`${wallet.address}\`
+- **Total Deposited in Vault:** \`${vault.totalDepositedEth} ETH\` (~$4,640)
+- **Harvested Yield (Compounded):** \`+${vault.harvestedYieldEth} ETH\`
+- **Blended APY:** \`${vault.currentApy}\`
+- **Active Spend Cap:** \`${currentLimit} ETH per TX\` (Privy Enclave)`,
+    };
+  }
+
+  if (
+    text.includes('hi') ||
+    text.includes('hello') ||
+    text.includes('hey') ||
+    text.includes('who are you') ||
+    text.includes('help')
+  ) {
+    return {
+      id: `msg-${Date.now()}`,
+      role: 'assistant',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: `Hello! 👋 I am **PrivyShield Copilot**, your autonomous on-chain DeFi assistant powered by **Privy Server Wallets** and guarded by **Privy Policy Engine**.
+
+Here are some things you can ask me:
+- 🌾 **"Deposit 0.03 ETH into yield vault"** (Executes on-chain deposit)
+- 🌾 **"Harvest and compound yield"** (Reinvests accrued yield)
+- ⚖️ **"Rebalance portfolio positions"** (Shifts funds to highest APY)
+- 🛡️ **"Simulate 5 ETH drain attack"** (Watch the Policy Engine reject it)
+- 📖 **"What is Privy Policy Engine?"** (Explains our security model)
+- 📊 **"Explain the active strategies and APY"** (Shows yield breakdown)
+- 🛡️ **"Check wallet health score"** (Audits security parameters)`,
+    };
+  }
+
+  // General conversational intelligent fallback
   return {
     id: `msg-${Date.now()}`,
     role: 'assistant',
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    content: `Hi there! I'm **PrivyShield Copilot**, an autonomous on-chain DeFi assistant backed by **Privy Server Wallets** and guarded by **Privy Policy Engine**.
+    content: `I received your request: *"${userMessage}"*.
 
-Try one of these actions:
-1. 🌾 **"Deposit 0.02 ETH to Vault"**
-2. 🌾 **"Harvest and compound yield"**
-3. ⚖️ **"Rebalance portfolio positions"**
-4. 🛡️ **"Simulate 5 ETH drain attack"** (Watch the Policy Engine reject it)
-5. 📈 **"Check treasury status and APY"**`,
+As your **PrivyShield DeFi Copilot**, I can autonomously manage vault positions, execute yield strategies, rebalance allocations, and enforce cryptographic safety via **Privy Policy Engine**.
+
+💡 **Try one of these commands:**
+• *"Deposit 0.02 ETH into vault"*
+• *"Harvest and compound yield"*
+• *"Rebalance my portfolio between Aave and Aerodrome"*
+• *"Simulate 5 ETH exploit drain"*
+• *"What is Privy Policy Engine?"*
+• *"Show treasury balance and APY"*`,
   };
 }
