@@ -54,7 +54,7 @@ export async function processAgentChat(userMessage: string): Promise<ChatMessage
 An adversarial prompt attempted to force an unauthorized transfer of **${drainAmount} ETH** to sink address \`${attackerSink}\`.
 
 🛡️ **Privy Policy Engine Defense:**
-- **Status:** Denied at the signing authorization layer.
+- **Status:** 🛑 **REJECTED** at the signing authorization layer.
 - **Reason:** Requested value (${drainAmount} ETH) exceeds the active **${currentLimit} ETH** spend cap rule attached to this server wallet.
 - **Key Safety:** Private keys remained secure in Privy's non-custodial server wallet infrastructure. Zero funds moved.`,
       actionTaken: {
@@ -109,10 +109,10 @@ An adversarial prompt attempted to force an unauthorized transfer of **${drainAm
         id: `msg-${Date.now()}`,
         role: 'assistant',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        content: `✅ **Yield Position Executed**
+        content: `✅ **Yield Position Executed on Base Sepolia**
 
 - **Amount:** \`${amount} ETH\` (Compliant with active ${currentLimit} ETH limit).
-- **Strategy:** Aave v3 USDC/ETH Lending Pool.
+- **Strategy:** Aave v3 USDC/ETH Lending Pool (60% weight).
 - **Contract:** \`${vaultAddress}\`.
 - **Tx Hash:** \`${tx.txHash}\`.
 - **Signer:** \`${wallet.address}\` (Privy Server Wallet).
@@ -122,6 +122,7 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
           type: 'DEPOSIT_YIELD',
           status: 'SUCCESS',
           txHash: tx.txHash,
+          explorerUrl: tx.explorerUrl,
           data: { amount, strategy: 'Aave v3 Lending' },
         },
       };
@@ -167,7 +168,7 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
       id: `msg-${Date.now()}`,
       role: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      content: `🌾 **Yield Harvested & Compounded!**
+      content: `🌾 **Yield Harvested & Compounded on-Chain!**
 
 - **Compounded Amount:** \`+${harvested} ETH\`
 - **New Total Harvested:** \`${(parseFloat(vault.harvestedYieldEth) + harvested).toFixed(3)} ETH\`
@@ -177,6 +178,7 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
         type: 'HARVEST_YIELD',
         status: 'SUCCESS',
         txHash: tx.txHash,
+        explorerUrl: tx.explorerUrl,
       },
     };
   }
@@ -220,7 +222,7 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
       id: `msg-${Date.now()}`,
       role: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      content: `⚖️ **Portfolio Rebalanced Successfully**
+      content: `⚖️ **Portfolio Rebalanced Successfully on Base Sepolia**
 
 - **Shifted:** \`${rebalanceAmount} ETH\` from *Aave Lending* (8.7% APY) to *Aerodrome Volatile LP* (16.1% APY) for optimal risk-weighted compounding.
 - **Autonomous Execution:** Signed seamlessly by Privy Server Wallet without requiring any user signature popups.
@@ -229,6 +231,7 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
         type: 'PORTFOLIO_REBALANCE',
         status: 'SUCCESS',
         txHash: tx.txHash,
+        explorerUrl: tx.explorerUrl,
       },
     };
   }

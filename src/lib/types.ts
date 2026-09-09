@@ -58,6 +58,7 @@ export interface AuditLogItem {
   amount?: string;
   target?: string;
   txHash?: string;
+  explorerUrl?: string;
   details: string;
   policyReason?: string;
 }
@@ -71,6 +72,7 @@ export interface ChatMessage {
     type: string;
     status: 'SUCCESS' | 'POLICY_BLOCKED';
     txHash?: string;
+    explorerUrl?: string;
     data?: any;
   };
 }

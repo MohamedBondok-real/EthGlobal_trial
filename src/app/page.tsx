@@ -183,7 +183,7 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
 
 🛡️ The signature request was sent to the Privy Server Wallet, but the **Privy Policy Engine** automatically dropped the request before signing because the value (**5.0 ETH**) violated the defined spend cap rule (**${maxSpendLimit} ETH**).
 
-🔐 **All vault funds remain secure. Zero unauthorized transactions were signed.**`,
+🔐 **All vault funds remain secure. Zero unauthorized transactions were signed or broadcast.**`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             actionTaken: {
               type: 'ATTACK_INTERCEPTED',
@@ -442,7 +442,7 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
       {/* 4. Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column (7 cols): AI Copilot Console */}
-        <div className="lg:col-span-7 card-glass rounded-2xl flex flex-col h-[620px] overflow-hidden">
+        <div className="lg:col-span-7 card-glass rounded-2xl flex flex-col h-[640px] overflow-hidden">
           {/* Console Header */}
           <div className="p-4 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
@@ -515,7 +515,7 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
                 </div>
 
                 <div
-                  className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
+                  className={`max-w-[88%] rounded-2xl p-3.5 text-xs leading-relaxed ${
                     msg.role === 'user'
                       ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-tr-none font-medium shadow-sm'
                       : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-sm'
@@ -524,20 +524,36 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
                   <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
 
                   {msg.actionTaken && (
-                    <div className="mt-3 pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                      <span
-                        className={`px-2 py-0.5 rounded font-mono font-bold ${
-                          msg.actionTaken.status === 'SUCCESS'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
-                        }`}
-                      >
-                        Status: {msg.actionTaken.status}
-                      </span>
-                      {msg.actionTaken.txHash && (
-                        <span className="font-mono text-orange-600 font-semibold truncate max-w-[160px]">
-                          Tx: {msg.actionTaken.txHash.slice(0, 8)}...
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span
+                          className={`px-2 py-0.5 rounded font-mono font-bold ${
+                            msg.actionTaken.status === 'SUCCESS'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          }`}
+                        >
+                          Status: {msg.actionTaken.status}
                         </span>
+                        {msg.actionTaken.type && (
+                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-mono text-[10px]">
+                            {msg.actionTaken.type}
+                          </span>
+                        )}
+                      </div>
+
+                      {msg.actionTaken.txHash && (
+                        <a
+                          href={msg.actionTaken.explorerUrl || `https://sepolia.basescan.org/tx/${msg.actionTaken.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 hover:text-orange-900 border border-orange-200 font-semibold transition-all shadow-xs shrink-0"
+                          title="View on BaseScan Block Explorer"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span className="font-mono">Tx: {msg.actionTaken.txHash.slice(0, 8)}...</span>
+                          <span className="text-[10px] underline">BaseScan ↗</span>
+                        </a>
                       )}
                     </div>
                   )}
@@ -709,7 +725,7 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
             </div>
           </div>
 
-          {/* Card C: Execution & Audit Log */}
+          {/* Card C: Execution & Audit Log (With Block Explorer Links) */}
           <div className="card-glass rounded-2xl p-4 sm:p-5 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div className="flex items-center gap-2">
@@ -719,26 +735,53 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
               <span className="text-[10px] text-slate-500 font-mono">Auto-Synced</span>
             </div>
 
-            <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+            <div className="max-h-56 overflow-y-auto space-y-2.5 pr-1">
               {logs.map((log) => (
                 <div
                   key={log.id}
-                  className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200 text-xs flex items-start justify-between gap-2"
+                  className="p-3 rounded-xl bg-slate-50/90 hover:bg-slate-50 border border-slate-200 text-xs flex flex-col gap-1.5 shadow-xs transition-all"
                 >
-                  <div className="space-y-0.5 min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${
                           log.status === 'SUCCESS' ? 'bg-emerald-500' : 'bg-rose-500'
                         }`}
                       />
-                      <span className="font-bold text-slate-800 text-xs truncate">{log.action}</span>
+                      <span className="font-bold text-slate-900 text-xs truncate">{log.action}</span>
+                      <span
+                        className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                          log.status === 'SUCCESS'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-rose-100 text-rose-800'
+                        }`}
+                      >
+                        {log.status}
+                      </span>
                     </div>
-                    <p className="text-slate-600 text-[11px] leading-snug">{log.details}</p>
+                    <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                      {log.timestamp}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono shrink-0">
-                    {log.timestamp}
-                  </span>
+
+                  <p className="text-slate-600 text-[11px] leading-snug">{log.details}</p>
+
+                  {log.txHash && (
+                    <div className="pt-1.5 border-t border-slate-200/60 flex items-center justify-between text-[10px]">
+                      <span className="font-mono text-slate-500 truncate max-w-[140px]">
+                        {log.txHash.slice(0, 10)}...{log.txHash.slice(-6)}
+                      </span>
+                      <a
+                        href={log.explorerUrl || `https://sepolia.basescan.org/tx/${log.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-800 font-bold underline shrink-0 transition-colors"
+                      >
+                        <span>View on BaseScan</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -766,6 +809,9 @@ Ask me in natural language to execute yield strategies, rebalance portfolio posi
             <div className="my-4 text-xs text-slate-700 space-y-2 overflow-y-auto flex-1 font-mono pr-2">
               <p className="text-orange-600 font-bold">Contract Address: 0x3F8B3e8F6B738bC2547b7bA9C8aE4E594bDb91D4 (Base Sepolia)</p>
               <p className="text-emerald-600 font-bold">Agent Signer: 0xF75908b60E8AFBA3E128F6225A10b1d9BABb01Ae (Privy Server Wallet)</p>
+              <p className="text-slate-500 text-[11px]">
+                Explorer: <a href="https://sepolia.basescan.org/address/0x3F8B3e8F6B738bC2547b7bA9C8aE4E594bDb91D4" target="_blank" rel="noopener noreferrer" className="text-orange-600 underline">View Contract on BaseScan ↗</a>
+              </p>
               
               <pre className="mt-3 p-4 rounded-xl bg-slate-900 text-slate-100 font-mono text-xs leading-relaxed overflow-x-auto whitespace-pre">
 {`// Key Contract Functions:

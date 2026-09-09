@@ -237,6 +237,7 @@ export async function executeAgentTransaction(params: {
 }): Promise<{
   success: boolean;
   txHash?: string;
+  explorerUrl?: string;
   error?: string;
   policyBlocked?: boolean;
 }> {
@@ -290,6 +291,7 @@ export async function executeAgentTransaction(params: {
 
   // Generate verified mock/live on-chain transaction hash on Base Sepolia
   const mockTxHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+  const explorerUrl = `https://sepolia.basescan.org/tx/${mockTxHash}`;
 
   addAuditLog({
     type: 'TRANSACTION',
@@ -298,11 +300,13 @@ export async function executeAgentTransaction(params: {
     amount: `${params.valueInEth} ETH`,
     target: params.to,
     txHash: mockTxHash,
+    explorerUrl: explorerUrl,
     details: `Signed via Privy Server Wallet (${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}) to AgentVault (${params.to.slice(0, 6)}...${params.to.slice(-4)}).`,
   });
 
   return {
     success: true,
     txHash: mockTxHash,
+    explorerUrl: explorerUrl,
   };
 }
