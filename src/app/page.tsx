@@ -29,10 +29,12 @@ import {
   CheckCircle2,
   XCircle,
   HelpCircle,
-  Wallet
+  Wallet,
+  ArrowRight
 } from 'lucide-react';
 import PrivyAuthButton from '@/components/PrivyAuthButton';
 import { AgentWalletData, VaultState, AuditLogItem, ChatMessage } from '@/lib/types';
+import { ethers } from 'ethers';
 
 export default function Home() {
   // State Management
@@ -42,7 +44,14 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
   const [showContractModal, setShowContractModal] = useState<boolean>(false);
-  const [connectedUserWallet, setConnectedUserWallet] = useState<{ address: string; type: 'METAMASK' | 'PRIVY' } | null>(null);
+
+  // Connected Web3 Wallet State (MetaMask / Injected)
+  const [connectedUserWallet, setConnectedUserWallet] = useState<{
+    address: string;
+    type: 'METAMASK' | 'PRIVY';
+    balance?: string;
+  } | null>(null);
+  const [isDirectDepositing, setIsDirectDepositing] = useState<boolean>(false);
 
   // Chat State
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -52,7 +61,7 @@ export default function Home() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       content: `👋 Welcome! I am **PrivyShield AI Agent** — your autonomous on-chain DeFi copilot operating via **Privy Server Wallets** and protected by the **Privy Policy Engine** on the signing layer.
 
-You can connect your **MetaMask** or **Privy Social Wallet** above, and ask me in natural language to execute yield strategies, rebalance portfolio positions, explain DeFi mechanisms, or trigger red-team simulations to test cryptographic security guardrails.`,
+Connect your **MetaMask** wallet above with one click, or ask me in natural language to execute yield strategies, rebalance portfolio positions, explain DeFi mechanisms, or trigger red-team exploit simulations.`,
     },
   ]);
   const [inputMsg, setInputMsg] = useState<string>('');
@@ -98,6 +107,69 @@ You can connect your **MetaMask** or **Privy Social Wallet** above, and ask me i
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Handle Direct MetaMask Deposit to AgentVault.sol
+  const handleDirectDeposit = async () => {
+    if (typeof window === 'undefined' || !(window as any).ethereum || !connectedUserWallet?.address) {
+      alert('Please connect MetaMask first to execute a direct on-chain deposit.');
+      return;
+    }
+
+    setIsDirectDepositing(true);
+    try {
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const vaultAddress = vault?.address || '0x3F8B3e8F6B738bC2547b7bA9C8aE4E594bDb91D4';
+
+      const userMsg: ChatMessage = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: `🦊 [MetaMask Direct Deposit] Depositing 0.01 ETH from ${connectedUserWallet.address.slice(0, 6)}... to AgentVault.sol (${vaultAddress.slice(0, 6)}...)`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, userMsg]);
+
+      // Trigger standard sendTransaction or contract call
+      const tx = await signer.sendTransaction({
+        to: vaultAddress,
+        value: ethers.parseEther('0.01'),
+      });
+
+      const confirmedMsg: ChatMessage = {
+        id: `agent-deposit-${Date.now()}`,
+        role: 'assistant',
+        content: `✅ **Direct MetaMask Deposit Confirmed on Base Sepolia!**
+
+- **Sender:** \`${connectedUserWallet.address}\`
+- **Vault:** \`${vaultAddress}\`
+- **Value:** \`0.01 ETH\`
+- **Tx Hash:** \`${tx.hash}\``,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        actionTaken: {
+          type: 'METAMASK_DIRECT_DEPOSIT',
+          status: 'SUCCESS',
+          txHash: tx.hash,
+          explorerUrl: `https://sepolia.basescan.org/tx/${tx.hash}`,
+        },
+      };
+
+      setMessages((prev) => [...prev, confirmedMsg]);
+      fetchState();
+    } catch (err: any) {
+      console.error('MetaMask deposit error:', err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: 'assistant',
+          content: `❌ MetaMask Deposit was canceled or failed: ${err.message || 'Transaction rejected'}`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    } finally {
+      setIsDirectDepositing(false);
+    }
+  };
 
   // Handle Chat Submit
   const handleSendMessage = async (msgText?: string) => {
@@ -281,7 +353,13 @@ You can connect your **MetaMask** or **Privy Social Wallet** above, and ask me i
 
           {/* Web3 / MetaMask / Privy Auth Button */}
           <PrivyAuthButton
-            onWalletConnected={(addr, type) => setConnectedUserWallet({ address: addr, type })}
+            onWalletConnected={(addr, type, bal) => {
+              if (addr) {
+                setConnectedUserWallet({ address: addr, type, balance: bal });
+              } else {
+                setConnectedUserWallet(null);
+              }
+            }}
           />
 
           {/* Refresh State */}
@@ -464,14 +542,36 @@ You can connect your **MetaMask** or **Privy Social Wallet** above, and ask me i
             </span>
           </div>
 
+          {/* Connected User Wallet Bar if Connected */}
+          {connectedUserWallet && (
+            <div className="p-2.5 px-4 bg-emerald-50/60 border-b border-emerald-100 flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-sm">🦊</span>
+                <span className="font-semibold text-emerald-900 truncate">
+                  Connected: <strong className="font-mono">{connectedUserWallet.address.slice(0, 6)}...{connectedUserWallet.address.slice(-4)}</strong>
+                </span>
+                {connectedUserWallet.balance && (
+                  <span className="text-[11px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded">
+                    {connectedUserWallet.balance} ETH
+                  </span>
+                )}
+              </div>
+
+              {connectedUserWallet.type === 'METAMASK' && (
+                <button
+                  onClick={handleDirectDeposit}
+                  disabled={isDirectDepositing}
+                  className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-all shadow-xs flex items-center gap-1 shrink-0"
+                >
+                  <Zap className="w-3 h-3 text-amber-300" />
+                  <span>{isDirectDepositing ? 'Signing in MetaMask...' : 'Deposit 0.01 ETH via MetaMask'}</span>
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Quick Action Suggestion Chips */}
           <div className="p-2.5 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2 overflow-x-auto text-xs">
-            {connectedUserWallet && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shrink-0">
-                <span>🦊</span>
-                <span>{connectedUserWallet.type === 'METAMASK' ? 'MetaMask Connected' : 'Privy Auth'}</span>
-              </div>
-            )}
             <span className="text-[11px] text-slate-500 font-bold shrink-0">Quick Prompts:</span>
             <button
               onClick={() => handleSendMessage('Invest 0.02 ETH into Yield Strategy')}
