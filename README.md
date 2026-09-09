@@ -8,6 +8,7 @@ Built for **ETHGlobal 2026** • Competing for the **Privy Sponsor Track** (*Bes
 
 ## Links
 
+- **Live Demo / Deployment:** [https://eth-global-trial.vercel.app/](https://eth-global-trial.vercel.app/)
 - **GitHub Repository:** [https://github.com/MohamedBondok-real/EthGlobal_trial](https://github.com/MohamedBondok-real/EthGlobal_trial)
 - **Target Network:** Base Sepolia Testnet (Chain ID: `84532`)
 - **Agent Server Wallet:** `0xF75908b60E8AFBA3E128F6225A10b1d9BABb01Ae`
