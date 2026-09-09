@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #08060B;
-  --foreground: #FFF1F2;
+  --background: #060309;
+  --foreground: #FFFFFF;
 }
 
 body {
@@ -20,36 +20,51 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #11091a;
+  background: #0d0414;
 }
 ::-webkit-scrollbar-thumb {
-  background: #3e1b4b;
+  background: #ff2a85;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ec4899;
+  background: #ff6500;
 }
 
+/* Ultra-Vibrant Luminous Glass Panels */
 .glass-panel {
-  background: rgba(20, 11, 30, 0.78);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 110, 160, 0.14);
+  background: rgba(22, 10, 32, 0.82);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 60, 160, 0.3);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .glass-panel-glow {
-  background: rgba(26, 12, 38, 0.88);
+  background: rgba(30, 12, 44, 0.92);
+  backdrop-filter: blur(24px);
+  border: 1.5px solid rgba(255, 102, 0, 0.65);
+  box-shadow: 0 0 35px rgba(255, 42, 133, 0.35), 0 0 15px rgba(255, 102, 0, 0.25), inset 0 0 20px rgba(255, 102, 0, 0.12);
+}
+
+.luminous-card {
+  background: linear-gradient(135deg, rgba(32, 12, 46, 0.85) 0%, rgba(20, 8, 30, 0.9) 100%);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 87, 34, 0.35);
-  box-shadow: 0 0 30px rgba(236, 72, 153, 0.22), inset 0 0 15px rgba(255, 87, 34, 0.08);
+  border: 1px solid rgba(255, 80, 180, 0.35);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 200, 230, 0.15);
 }
 
-.sunset-text-gradient {
-  background: linear-gradient(135deg, #FF6B00 0%, #FF2E93 50%, #B026FF 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.luminous-card:hover {
+  border-color: rgba(255, 120, 0, 0.7);
+  box-shadow: 0 0 25px rgba(255, 42, 133, 0.4), 0 0 15px rgba(255, 102, 0, 0.3);
 }
 
-.sunset-border-glow {
-  border: 1px solid rgba(236, 72, 153, 0.35);
-  box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);
+.neon-text-glow {
+  text-shadow: 0 0 15px rgba(255, 42, 133, 0.7), 0 0 30px rgba(255, 102, 0, 0.4);
+}
+
+.neon-orange-glow {
+  box-shadow: 0 0 20px rgba(255, 102, 0, 0.5), 0 0 40px rgba(255, 102, 0, 0.2);
+}
+
+.neon-pink-glow {
+  box-shadow: 0 0 20px rgba(255, 42, 133, 0.5), 0 0 40px rgba(255, 42, 133, 0.2);
 }
