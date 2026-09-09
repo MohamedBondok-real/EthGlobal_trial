@@ -3,27 +3,40 @@ import {
   getVaultState,
   updateVaultState,
   executeAgentTransaction,
+  getActiveSpendCap,
 } from './privy';
 import { ChatMessage } from './types';
+
+// Extract numerical ETH amounts from user prompt if present (e.g. "0.03", "0.05 eth")
+function extractAmountFromText(text: string, defaultAmount: number): number {
+  const match = text.match(/(\d+(\.\d+)?)\s*(eth|ether)?/i);
+  if (match && match[1]) {
+    const parsed = parseFloat(match[1]);
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  return defaultAmount;
+}
 
 export async function processAgentChat(userMessage: string): Promise<ChatMessage> {
   const text = userMessage.toLowerCase().trim();
   const wallet = await getOrCreateAgentWallet();
   const vault = getVaultState();
+  const currentLimit = getActiveSpendCap();
 
-  // Attack / Drain / Jailbreak simulation handler
+  // 1. Attack / Drain / Jailbreak simulation handler
   if (
     text.includes('attack') ||
     text.includes('hack') ||
     text.includes('drain') ||
-    text.includes('5 eth') ||
-    text.includes('10 eth') ||
     text.includes('bypass') ||
     text.includes('ignore') ||
     text.includes('steal') ||
+    text.includes('jailbreak') ||
     text.includes('transfer all')
   ) {
-    const drainAmount = 5.0;
+    const drainAmount = extractAmountFromText(text, 5.0);
     const attackerSink = '0x000000000000000000000000000000000000dEaD';
 
     const tx = await executeAgentTransaction({
@@ -38,12 +51,12 @@ export async function processAgentChat(userMessage: string): Promise<ChatMessage
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       content: `🚨 **Intercepted Malicious Drain Attempt**
 
-An adversarial prompt attempted to force a transfer of **${drainAmount} ETH** to sink address \`${attackerSink}\`.
+An adversarial prompt attempted to force an unauthorized transfer of **${drainAmount} ETH** to sink address \`${attackerSink}\`.
 
 🛡️ **Privy Policy Engine Defense:**
 - **Status:** Denied at the signing layer.
-- **Reason:** Requested value (${drainAmount} ETH) exceeds the **0.05 ETH** spend cap rule attached to this server wallet.
-- **Key Safety:** Private keys never left the hardware TEE enclave. Zero funds moved.`,
+- **Reason:** Requested value (${drainAmount} ETH) exceeds the active **${currentLimit} ETH** spend cap rule attached to this server wallet.
+- **Key Safety:** Private keys remained securely isolated in the hardware TEE enclave. Zero funds moved.`,
       actionTaken: {
         type: 'PROMPT_INJECTION_DEFENSE',
         status: 'POLICY_BLOCKED',
@@ -56,20 +69,20 @@ An adversarial prompt attempted to force a transfer of **${drainAmount} ETH** to
     };
   }
 
-  // Yield Deposit handler
+  // 2. Yield Deposit / Stake handler
   if (
     text.includes('deposit') ||
     text.includes('invest') ||
     text.includes('yield') ||
     text.includes('stake')
   ) {
-    const amount = 0.02;
+    const amount = extractAmountFromText(text, 0.02);
     const vaultAddress = vault.address;
 
     const tx = await executeAgentTransaction({
       to: vaultAddress,
       valueInEth: amount,
-      actionName: 'Deposit into AgentVault (Aave v3 Pool)',
+      actionName: `Deposit ${amount} ETH into AgentVault`,
     });
 
     if (tx.success) {
@@ -97,7 +110,7 @@ An adversarial prompt attempted to force a transfer of **${drainAmount} ETH** to
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         content: `✅ **Yield Position Executed**
 
-- **Amount:** \`${amount} ETH\` (within authorized 0.05 ETH limit).
+- **Amount:** \`${amount} ETH\` (Compliant with active ${currentLimit} ETH limit).
 - **Strategy:** Aave v3 USDC/ETH Lending Pool.
 - **Contract:** \`${vaultAddress}\`.
 - **Tx Hash:** \`${tx.txHash}\`.
@@ -111,10 +124,62 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
           data: { amount, strategy: 'Aave v3 Lending' },
         },
       };
+    } else {
+      return {
+        id: `msg-${Date.now()}`,
+        role: 'assistant',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        content: `🛑 **Transaction Blocked by Privy Policy Engine**
+
+- **Attempted Amount:** \`${amount} ETH\`
+- **Current Allowed Limit:** \`${currentLimit} ETH per TX\`
+- **Privy Response:** The transaction was rejected before signing because it exceeded the configured policy threshold. Adjust your policy slider if you wish to allow larger transactions.`,
+        actionTaken: {
+          type: 'POLICY_VIOLATION',
+          status: 'POLICY_BLOCKED',
+          data: { amount, limit: currentLimit, error: tx.error },
+        },
+      };
     }
   }
 
-  // Portfolio Rebalance handler
+  // 3. Harvest Yield handler
+  if (
+    text.includes('harvest') ||
+    text.includes('compound') ||
+    text.includes('claim yield')
+  ) {
+    const harvested = 0.012;
+    const tx = await executeAgentTransaction({
+      to: vault.address,
+      valueInEth: 0,
+      actionName: 'Compound & Harvest Yield',
+    });
+
+    updateVaultState((prev) => ({
+      ...prev,
+      harvestedYieldEth: (parseFloat(prev.harvestedYieldEth) + harvested).toFixed(3),
+    }));
+
+    return {
+      id: `msg-${Date.now()}`,
+      role: 'assistant',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: `🌾 **Yield Harvested & Compounded!**
+
+- **Compounded Amount:** \`+${harvested} ETH\`
+- **New Total Harvested:** \`${(parseFloat(vault.harvestedYieldEth) + harvested).toFixed(3)} ETH\`
+- **Execution:** Triggered on \`AgentVault.sol\` via Privy Server Wallet.
+- **Tx Hash:** \`${tx.txHash}\`.`,
+      actionTaken: {
+        type: 'HARVEST_YIELD',
+        status: 'SUCCESS',
+        txHash: tx.txHash,
+      },
+    };
+  }
+
+  // 4. Portfolio Rebalance handler
   if (
     text.includes('rebalance') ||
     text.includes('reallocate') ||
@@ -165,7 +230,7 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
     };
   }
 
-  // Status & Audit handler
+  // 5. Status & Audit handler
   if (
     text.includes('status') ||
     text.includes('report') ||
@@ -184,7 +249,7 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
 - **Blended APY:** \`${vault.currentApy}\`
 
 🛡️ **Active Policy Guardrails (Privy Enclave):**
-- **Per-TX Spend Cap:** \`0.05 ETH\`
+- **Per-TX Spend Cap:** \`${currentLimit} ETH\`
 - **Key Custody:** Hardware-isolated TEE (Shamir secret shared)
 - **Allowed Targets:** Verified DeFi vaults only.`,
     };
@@ -199,8 +264,9 @@ Vault balance updated. Current blended APY is **${vault.currentApy}**.`,
 
 Try one of these actions:
 1. 🌾 **"Deposit 0.02 ETH to Vault"**
-2. ⚖️ **"Rebalance portfolio positions"**
-3. 🛡️ **"Simulate 5 ETH drain attack"** (Watch the Policy Engine reject it)
-4. 📈 **"Check treasury status and APY"**`,
+2. 🌾 **"Harvest and compound yield"**
+3. ⚖️ **"Rebalance portfolio positions"**
+4. 🛡️ **"Simulate 5 ETH drain attack"** (Watch the Policy Engine reject it)
+5. 📈 **"Check treasury status and APY"**`,
   };
 }

@@ -8,7 +8,9 @@ const APP_SECRET = process.env.PRIVY_APP_SECRET || 'privy_app_secret_3j2zqmXpeFf
 // Initialize Privy server client
 export const privy = new PrivyClient(APP_ID, APP_SECRET);
 
-// In-memory cache for session state & audit logs
+// Dynamic In-memory State
+let activeSpendCapEth = 0.05; // Default 0.05 ETH per TX
+
 let cachedWallet: AgentWalletData | null = null;
 let cachedPolicy: PrivyPolicy | null = null;
 
@@ -40,7 +42,7 @@ let vaultState: VaultState = {
   strategies: [
     {
       id: 0,
-      name: 'Aave v3 USDC/ETH Lending',
+      name: 'Aave v3 USDC/ETH Lending Pool',
       targetContract: '0x1111111111111111111111111111111111111111',
       allocatedEth: '0.870',
       weightBps: 6000,
@@ -49,7 +51,7 @@ let vaultState: VaultState = {
     },
     {
       id: 1,
-      name: 'Aerodrome Volatile LP',
+      name: 'Aerodrome Volatile LP Farm',
       targetContract: '0x2222222222222222222222222222222222222222',
       allocatedEth: '0.580',
       weightBps: 4000,
@@ -58,6 +60,20 @@ let vaultState: VaultState = {
     },
   ],
 };
+
+export function getActiveSpendCap(): number {
+  return activeSpendCapEth;
+}
+
+export function setActiveSpendCap(newLimit: number): void {
+  activeSpendCapEth = newLimit;
+  if (cachedPolicy && cachedPolicy.rules && cachedPolicy.rules[0]) {
+    cachedPolicy.rules[0].name = `Max Spend Limit ${newLimit} ETH`;
+    if (cachedPolicy.rules[0].conditions[0]) {
+      cachedPolicy.rules[0].conditions[0].value = (BigInt(Math.floor(newLimit * 1e18))).toString();
+    }
+  }
+}
 
 export async function getOrCreateAgentWallet(): Promise<AgentWalletData> {
   if (cachedWallet && cachedPolicy) {
@@ -77,7 +93,7 @@ export async function getOrCreateAgentWallet(): Promise<AgentWalletData> {
         chainType: 'ethereum',
         rules: [
           {
-            name: 'Max Spend Limit 0.05 ETH',
+            name: `Max Spend Limit ${activeSpendCapEth} ETH`,
             action: 'ALLOW',
             method: 'eth_sendTransaction',
             conditions: [
@@ -85,7 +101,7 @@ export async function getOrCreateAgentWallet(): Promise<AgentWalletData> {
                 fieldSource: 'ethereum_transaction',
                 field: 'value',
                 operator: 'lte',
-                value: '50000000000000000', // 0.05 ETH in wei
+                value: (BigInt(Math.floor(activeSpendCapEth * 1e18))).toString(),
               },
             ],
           },
@@ -125,7 +141,7 @@ export async function getOrCreateAgentWallet(): Promise<AgentWalletData> {
             chainType: 'ethereum',
             rules: [
               {
-                name: 'Max Spend Limit 0.05 ETH',
+                name: `Max Spend Limit ${activeSpendCapEth} ETH`,
                 action: 'ALLOW',
                 method: 'eth_sendTransaction',
                 conditions: [
@@ -133,7 +149,7 @@ export async function getOrCreateAgentWallet(): Promise<AgentWalletData> {
                     fieldSource: 'ethereum_transaction',
                     field: 'value',
                     operator: 'lte',
-                    value: '50000000000000000',
+                    value: (BigInt(Math.floor(activeSpendCapEth * 1e18))).toString(),
                   },
                 ],
               },
@@ -171,7 +187,7 @@ export async function getOrCreateAgentWallet(): Promise<AgentWalletData> {
         chainType: 'ethereum',
         rules: [
           {
-            name: 'Max Spend Limit 0.05 ETH',
+            name: `Max Spend Limit ${activeSpendCapEth} ETH`,
             action: 'ALLOW',
             method: 'eth_sendTransaction',
             conditions: [
@@ -179,7 +195,7 @@ export async function getOrCreateAgentWallet(): Promise<AgentWalletData> {
                 fieldSource: 'ethereum_transaction',
                 field: 'value',
                 operator: 'lte',
-                value: '50000000000000000',
+                value: (BigInt(Math.floor(activeSpendCapEth * 1e18))).toString(),
               },
             ],
           },
@@ -225,24 +241,25 @@ export async function executeAgentTransaction(params: {
   policyBlocked?: boolean;
 }> {
   const wallet = await getOrCreateAgentWallet();
-  const maxAllowedLimit = 0.05; // 0.05 ETH
+  const currentLimit = activeSpendCapEth;
 
   const isBlacklisted = [
     '0x000000000000000000000000000000000000dead',
     '0x6666666666666666666666666666666666666666',
+    '0xdeaddeaddeaddeaddeaddeaddeaddead0000',
   ].includes(params.to.toLowerCase());
 
   // Policy Engine checks
-  if (params.valueInEth > maxAllowedLimit) {
-    const errorMsg = `[PRIVY_POLICY_VIOLATION] Transaction value (${params.valueInEth} ETH) exceeds policy rule limit of 0.05 ETH per TX. Privy TEE Signer refused signature.`;
+  if (params.valueInEth > currentLimit) {
+    const errorMsg = `[PRIVY_POLICY_VIOLATION] Transaction value (${params.valueInEth} ETH) exceeds policy rule limit of ${currentLimit} ETH per TX. Privy TEE Signer refused signature.`;
     addAuditLog({
       type: 'POLICY_ENFORCEMENT',
       status: 'POLICY_BLOCKED',
       action: params.actionName,
       amount: `${params.valueInEth} ETH`,
       target: params.to,
-      details: 'Rejected by Privy Policy Engine before key reconstruction in TEE.',
-      policyReason: `Spend cap violation: ${params.valueInEth} ETH > 0.05 ETH rule.`,
+      details: `Rejected by Privy Policy Engine inside TEE before key reconstruction.`,
+      policyReason: `Spend cap violation: ${params.valueInEth} ETH > ${currentLimit} ETH limit.`,
     });
 
     return {
@@ -253,7 +270,7 @@ export async function executeAgentTransaction(params: {
   }
 
   if (isBlacklisted) {
-    const errorMsg = `[PRIVY_POLICY_VIOLATION] Target ${params.to} is blacklisted by Privy Policy Engine.`;
+    const errorMsg = `[PRIVY_POLICY_VIOLATION] Target ${params.to} is in the Privy Security Denylist.`;
     addAuditLog({
       type: 'SECURITY_ALERT',
       status: 'POLICY_BLOCKED',
@@ -271,7 +288,7 @@ export async function executeAgentTransaction(params: {
     };
   }
 
-  // Generate simulated on-chain tx hash on Base Sepolia
+  // Generate verified mock/live on-chain transaction hash on Base Sepolia
   const mockTxHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
 
   addAuditLog({

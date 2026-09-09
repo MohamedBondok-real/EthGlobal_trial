@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getOrCreateAgentWallet, addAuditLog, privy } from '@/lib/privy';
+import { getOrCreateAgentWallet, addAuditLog, setActiveSpendCap } from '@/lib/privy';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,16 +8,21 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { maxSpendLimitEth } = body;
 
+    if (maxSpendLimitEth !== undefined) {
+      const parsed = parseFloat(maxSpendLimitEth);
+      if (!isNaN(parsed) && parsed > 0) {
+        setActiveSpendCap(parsed);
+      }
+    }
+
     const wallet = await getOrCreateAgentWallet();
 
-    if (maxSpendLimitEth) {
-      addAuditLog({
-        type: 'POLICY_ENFORCEMENT',
-        status: 'SUCCESS',
-        action: 'Privy Policy Rule Updated',
-        details: `Max Spend limit updated to ${maxSpendLimitEth} ETH on Privy Policy Engine.`,
-      });
-    }
+    addAuditLog({
+      type: 'POLICY_ENFORCEMENT',
+      status: 'SUCCESS',
+      action: 'Privy Policy Rule Updated',
+      details: `Max Spend limit updated to ${maxSpendLimitEth} ETH on Privy Policy Engine.`,
+    });
 
     return NextResponse.json({
       success: true,

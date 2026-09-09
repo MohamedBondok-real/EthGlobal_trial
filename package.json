@@ -6,7 +6,8 @@
     "dev": "NODE_OPTIONS='--max-old-space-size=1024' next dev -p 3000",
     "build": "NODE_OPTIONS='--max-old-space-size=1024' next build",
     "start": "NODE_OPTIONS='--max-old-space-size=1024' next start -p 3000",
-    "compile:contracts": "node scripts/compile.js"
+    "compile:contracts": "node scripts/compile.js",
+    "test": "node scripts/test-agent.js"
   },
   "dependencies": {
     "@privy-io/react-auth": "^1.98.0",
@@ -17,7 +18,7 @@
     "next": "14.2.15",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "solc": "^0.8.36",
+    "solc": "^0.8.26",
     "tailwind-merge": "^2.5.4",
     "viem": "^2.21.37"
   },
