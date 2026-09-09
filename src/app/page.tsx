@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Shield,
   ShieldCheck,
@@ -44,6 +45,11 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
   const [showContractModal, setShowContractModal] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Connected Web3 Wallet State (MetaMask / Injected)
   const [connectedUserWallet, setConnectedUserWallet] = useState<{
@@ -900,8 +906,8 @@ Connect your **MetaMask** wallet above with one click, or ask me in natural lang
       </div>
 
       {/* Contract ABI Modal */}
-      {showContractModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      {mounted && showContractModal && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in">
           <div className="w-full max-w-2xl rounded-2xl bg-white border border-slate-200 p-6 shadow-2xl relative max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -910,7 +916,7 @@ Connect your **MetaMask** wallet above with one click, or ask me in natural lang
               </div>
               <button
                 onClick={() => setShowContractModal(false)}
-                className="text-slate-400 hover:text-slate-700 text-sm font-bold p-1"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors shrink-0"
               >
                 ✕
               </button>
@@ -941,7 +947,8 @@ function togglePause() external onlyOwner;`}
               Close Viewer
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
