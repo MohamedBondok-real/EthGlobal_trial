@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { createPortal } from 'react-dom';
 import {
   KeyRound,
@@ -258,14 +259,14 @@ export default function PrivyAuthButton({ onWalletConnected }: PrivyAuthButtonPr
           </button>
 
           {/* 2. Privy Social / Email Login Button */}
-          <button
-            onClick={() => setShowPrivyModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-pink-50 hover:bg-pink-100 border border-pink-200 text-pink-700 font-semibold text-xs transition-all shrink-0"
-            title="Login with Email or Passkey"
+          <Link
+            href="/login"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-pink-50 hover:bg-pink-100 border border-pink-200 text-pink-700 font-semibold text-xs transition-all shrink-0 shadow-xs"
+            title="Open Dedicated Login & Register Page"
           >
             <KeyRound className="w-3.5 h-3.5 text-pink-600" />
-            <span>Privy Auth</span>
-          </button>
+            <span>Sign In / Register</span>
+          </Link>
         </div>
       )}
 
